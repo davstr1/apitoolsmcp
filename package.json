@@ -1,0 +1,49 @@
+{
+  "name": "api-tools-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for serving API schemas to AI",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "api-tools-mcp": "./dist/cli/index.js"
+  },
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rimraf dist",
+    "prepublishOnly": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/davstr1/apitoolsmcp.git"
+  },
+  "keywords": [
+    "mcp",
+    "api",
+    "openapi",
+    "yaml",
+    "cli",
+    "ai"
+  ],
+  "author": "davstr1",
+  "license": "MIT",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/davstr1/apitoolsmcp/issues"
+  },
+  "homepage": "https://github.com/davstr1/apitoolsmcp#readme",
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.0.4",
+    "jest": "^30.0.3",
+    "rimraf": "^6.0.1",
+    "ts-jest": "^29.4.0",
+    "typescript": "^5.8.3"
+  }
+}
