@@ -1,11 +1,5 @@
-import { 
-  ListToolsRequestSchema, 
-  CallToolRequestSchema,
-  Tool,
-  TextContent
-} from '@modelcontextprotocol/sdk/types.js';
+import { TextContent } from '@modelcontextprotocol/sdk/types.js';
 import { SchemaProvider } from './schema-provider';
-import { APISchema } from '../types/api-schema';
 
 interface ToolDefinition {
   name: string;
@@ -30,7 +24,7 @@ export function createTools(schemaProvider: SchemaProvider): ToolDefinition[] {
         },
       },
     },
-    handler: ListToolsRequestSchema.parse(async (request: any) => {
+    handler: async (request: any) => {
       const schemas = request.params?.search 
         ? schemaProvider.searchSchemas(request.params.search)
         : schemaProvider.listSchemas();
@@ -52,7 +46,7 @@ export function createTools(schemaProvider: SchemaProvider): ToolDefinition[] {
       };
 
       return { content: [content] };
-    }),
+    },
   });
 
   // Get details of a specific API schema
@@ -69,7 +63,7 @@ export function createTools(schemaProvider: SchemaProvider): ToolDefinition[] {
       },
       required: ['apiId'],
     },
-    handler: CallToolRequestSchema.parse(async (request: any) => {
+    handler: async (request: any) => {
       const { apiId } = request.params;
       const schema = schemaProvider.getSchema(apiId);
 
@@ -88,7 +82,7 @@ export function createTools(schemaProvider: SchemaProvider): ToolDefinition[] {
       };
 
       return { content: [content] };
-    }),
+    },
   });
 
   // Get a specific endpoint from an API
@@ -114,7 +108,7 @@ export function createTools(schemaProvider: SchemaProvider): ToolDefinition[] {
       },
       required: ['apiId', 'path', 'method'],
     },
-    handler: CallToolRequestSchema.parse(async (request: any) => {
+    handler: async (request: any) => {
       const { apiId, path, method } = request.params;
       const schema = schemaProvider.getSchema(apiId);
 
@@ -146,7 +140,7 @@ export function createTools(schemaProvider: SchemaProvider): ToolDefinition[] {
       };
 
       return { content: [content] };
-    }),
+    },
   });
 
   return tools;

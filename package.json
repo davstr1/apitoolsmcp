@@ -5,7 +5,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "api-tools-mcp": "./dist/cli/index.js"
+    "api-tools-mcp": "./dist/cli/index.js",
+    "api-tools-mcp-server": "./dist/server/mcp-entry.js"
   },
   "files": [
     "dist/"

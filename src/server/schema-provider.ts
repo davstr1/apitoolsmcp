@@ -4,11 +4,9 @@ import { YAMLScanner } from '../schemas/yaml-scanner';
 
 export class SchemaProvider {
   private schemas: Map<string, APISchema> = new Map();
-  private config: Config;
   private yamlScanner: YAMLScanner;
 
   constructor(config: Config) {
-    this.config = config;
     this.yamlScanner = new YAMLScanner(config.schemaDirectory);
   }
 

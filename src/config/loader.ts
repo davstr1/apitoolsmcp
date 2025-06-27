@@ -4,7 +4,7 @@ import * as os from 'os';
 import { Config } from '../types/config';
 
 const DEFAULT_CONFIG: Config = {
-  schemaDirectory: path.join(process.cwd(), 'api-schemas'),
+  schemaDirectory: './api-schemas',
   remoteImports: {
     enabled: true,
     cacheDuration: 3600000, // 1 hour
@@ -23,11 +23,6 @@ const DEFAULT_CONFIG: Config = {
 
 export async function getConfig(): Promise<Config> {
   let config = { ...DEFAULT_CONFIG };
-
-  // Check environment variables
-  if (process.env.APITOOLSMCP_SCHEMA_DIR) {
-    config.schemaDirectory = path.resolve(process.env.APITOOLSMCP_SCHEMA_DIR);
-  }
 
   if (process.env.APITOOLSMCP_CONFIG_PATH) {
     const configPath = path.resolve(process.env.APITOOLSMCP_CONFIG_PATH);
@@ -51,6 +46,11 @@ export async function getConfig(): Promise<Config> {
         // Config file doesn't exist, continue to next
       }
     }
+  }
+
+  // Check environment variables after loading config file
+  if (process.env.APITOOLSMCP_SCHEMA_DIR) {
+    config.schemaDirectory = path.resolve(process.env.APITOOLSMCP_SCHEMA_DIR);
   }
 
   return config;
@@ -77,17 +77,17 @@ function mergeConfigs(base: Config, override: Partial<Config>): Config {
   return {
     ...base,
     ...override,
-    remoteImports: {
+    remoteImports: override.remoteImports ? {
       ...base.remoteImports,
       ...override.remoteImports,
-    },
-    server: {
+    } : base.remoteImports,
+    server: override.server ? {
       ...base.server,
       ...override.server,
-    },
-    validation: {
+    } : base.server,
+    validation: override.validation ? {
       ...base.validation,
       ...override.validation,
-    },
+    } : base.validation,
   };
 }

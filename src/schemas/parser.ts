@@ -36,8 +36,6 @@ export class Parser {
   }
 
   private convertToAPISchema(data: any, filePath: string): APISchema {
-    const fileStats = fs.stat(filePath);
-    
     const schema: APISchema = {
       id: data.id || path.basename(filePath, path.extname(filePath)),
       name: data.name || 'Unnamed API',
