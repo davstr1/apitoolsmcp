@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "api-tools": {
+      "command": "node",
+      "args": ["../dist/server/mcp-entry.js"],
+      "env": {
+        "APITOOLSMCP_SCHEMA_DIR": "./schemas"
+      }
+    }
+  }
+}

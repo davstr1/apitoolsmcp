@@ -1,0 +1,61 @@
+id: sample-webhook-api
+name: Sample Webhook API
+version: 1.0.0
+description: Sample webhook definitions for testing
+baseURL: https://webhooks.example.com
+authentication:
+  type: bearer
+  details:
+    headerName: Authorization
+    format: Bearer {token}
+endpoints:
+  - path: /webhooks/payment
+    method: POST
+    description: Payment event webhook
+    headers:
+      - name: X-Webhook-Signature
+        required: true
+        description: HMAC signature for payload verification
+      - name: X-Webhook-Timestamp
+        required: true
+        description: Timestamp of the webhook event
+    requestBody:
+      required: true
+      contentType: application/json
+      schema:
+        type: object
+        properties:
+          event:
+            type: string
+            enum: [payment.success, payment.failed, payment.pending]
+          paymentId:
+            type: string
+          amount:
+            type: number
+          currency:
+            type: string
+      example:
+        event: payment.success
+        paymentId: pay_123456789
+        amount: 99.99
+        currency: USD
+    responses:
+      200:
+        description: Webhook processed successfully
+      401:
+        description: Invalid signature
+  - path: /webhooks/subscription
+    method: POST
+    description: Subscription event webhook
+    parameters:
+      - name: test
+        type: boolean
+        required: false
+        description: Test mode flag
+    requestBody:
+      required: true
+      contentType: application/json
+      example:
+        event: subscription.created
+        subscriptionId: sub_123456789
+        planId: plan_premium

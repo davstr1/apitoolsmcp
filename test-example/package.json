@@ -1,0 +1,14 @@
+{
+  "name": "api-tools-mcp-test-example",
+  "version": "1.0.0",
+  "description": "Test example for API Tools MCP",
+  "main": "index.js",
+  "scripts": {
+    "test-cli": "node test-cli.js",
+    "test-server": "node test-server.js",
+    "setup": "npm link .."
+  },
+  "dependencies": {
+    "api-tools-mcp": "file:.."
+  }
+}
