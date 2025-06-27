@@ -1,6 +1,8 @@
 import chalk from 'chalk';
 import { getConfig } from '../../config/loader';
 import { YAMLScanner } from '../../schemas/yaml-scanner';
+import { OpenAPIScanner } from '../../services/openapi-scanner';
+import inquirer from 'inquirer';
 
 interface ListOptions {
   search?: string;
@@ -22,7 +24,42 @@ export async function listCommand(options: ListOptions): Promise<void> {
     }
 
     if (schemas.length === 0) {
-      console.log(chalk.yellow('No API schemas found'));
+      console.log(chalk.yellow('No API schemas found in the configured directory.'));
+      
+      // Check for OpenAPI files in the project
+      console.log(chalk.cyan('\nScanning for OpenAPI specifications in the project...'));
+      const openApiScanner = new OpenAPIScanner();
+      const foundFiles = await openApiScanner.scan();
+      
+      if (foundFiles.length > 0) {
+        console.log(chalk.green(`\nFound ${foundFiles.length} OpenAPI specification(s):\n`));
+        
+        for (const file of foundFiles) {
+          console.log(chalk.cyan(`📄 ${file.path}`));
+          if (file.title) console.log(`   Title: ${file.title}`);
+          if (file.version) console.log(`   Version: OpenAPI ${file.version}`);
+          if (file.description) console.log(`   Description: ${file.description}`);
+          console.log();
+        }
+        
+        const { importNow } = await inquirer.prompt([
+          {
+            type: 'confirm',
+            name: 'importNow',
+            message: 'Would you like to import these OpenAPI specifications?',
+            default: true,
+          },
+        ]);
+        
+        if (importNow) {
+          console.log(chalk.yellow('\nTo import, use: api-tools-mcp import <file-path>'));
+          console.log(chalk.gray('Example: api-tools-mcp import ' + foundFiles[0].path));
+        }
+      } else {
+        console.log(chalk.yellow('\nNo OpenAPI specifications found in the project.'));
+        console.log(chalk.gray('To add an API, use: api-tools-mcp add'));
+      }
+      
       return;
     }
 
