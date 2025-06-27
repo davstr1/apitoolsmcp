@@ -11,9 +11,14 @@ import {
   DnsLookupError,
 } from '../errors';
 import { Validator, ValidationSchema } from '../utils/validators';
+import { retry } from '../utils/retry';
+import { CircuitBreaker } from '../utils/circuit-breaker';
 
 export class ApiTester {
   private defaultTimeout = 30000; // 30 seconds
+  private defaultMaxRetries = 3;
+  private defaultRetryDelay = 1000;
+  private circuitBreakers: Map<string, CircuitBreaker> = new Map();
 
   private requestSchema: ValidationSchema = {
     url: {
@@ -26,20 +31,75 @@ export class ApiTester {
     },
   };
 
+  private getCircuitBreaker(url: string): CircuitBreaker {
+    const host = new URL(url).host;
+    
+    if (!this.circuitBreakers.has(host)) {
+      this.circuitBreakers.set(host, new CircuitBreaker({
+        failureThreshold: 5,
+        resetTimeout: 60000, // 1 minute
+        volumeThreshold: 10,
+        errorThresholdPercentage: 50,
+      }));
+    }
+    
+    return this.circuitBreakers.get(host)!;
+  }
+
   async executeRequest(request: HttpRequest, options: RawHttpOptions = {}): Promise<ApiTestResult> {
     // Validate request
     Validator.validate(request, this.requestSchema);
 
     const startTime = Date.now();
     const timestamp = new Date().toISOString();
+    const circuitBreaker = this.getCircuitBreaker(request.url);
 
     try {
       let response: HttpResponse;
 
-      if (options.rawMode) {
-        response = await this.executeRawRequest(request);
+      const executeWithRetry = async () => {
+        if (options.rawMode) {
+          return await retry(() => this.executeRawRequest(request), {
+            maxAttempts: options.maxRetries || this.defaultMaxRetries,
+            delayMs: this.defaultRetryDelay,
+            backoffMultiplier: 2,
+            retryCondition: (error: Error) => {
+              // Retry on network errors and 5xx status codes
+              if (error instanceof NetworkError || 
+                  error instanceof RequestTimeoutError ||
+                  error instanceof ConnectionRefusedError ||
+                  error instanceof DnsLookupError) {
+                return true;
+              }
+              const statusCode = (error as any).statusCode;
+              return statusCode && statusCode >= 500 && statusCode < 600;
+            }
+          });
+        } else {
+          return await retry(() => this.executeFetchRequest(request, options), {
+            maxAttempts: options.maxRetries || this.defaultMaxRetries,
+            delayMs: this.defaultRetryDelay,
+            backoffMultiplier: 2,
+            retryCondition: (error: Error) => {
+              // Retry on network errors and 5xx status codes
+              if (error instanceof NetworkError || 
+                  error instanceof RequestTimeoutError ||
+                  error instanceof ConnectionRefusedError ||
+                  error instanceof DnsLookupError) {
+                return true;
+              }
+              const statusCode = (error as any).statusCode;
+              return statusCode && statusCode >= 500 && statusCode < 600;
+            }
+          });
+        }
+      };
+
+      // Execute with circuit breaker if not disabled
+      if (options.disableCircuitBreaker) {
+        response = await executeWithRetry();
       } else {
-        response = await this.executeFetchRequest(request, options);
+        response = await circuitBreaker.execute(executeWithRetry);
       }
 
       const responseTime = Date.now() - startTime;

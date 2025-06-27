@@ -38,6 +38,8 @@ export interface RawHttpOptions {
   followRedirects?: boolean;
   validateStatus?: (status: number) => boolean;
   rawMode?: boolean; // Use native http/https modules
+  maxRetries?: number; // Number of retry attempts for failed requests
+  disableCircuitBreaker?: boolean; // Disable circuit breaker for this request
 }
 
 export interface ParameterInfo {
