@@ -6,20 +6,24 @@ import { logger } from '../utils/logger';
 export class SchemaProvider {
   private schemas: Map<string, APISchema> = new Map();
   private yamlScanner: YAMLScanner;
+  private config: Config;
 
   constructor(config: Config) {
+    this.config = config;
     this.yamlScanner = new YAMLScanner(config.schemaDirectory);
   }
 
   async loadSchemas(): Promise<void> {
     try {
       const schemas = await this.yamlScanner.scanDirectory();
-      
+
       for (const schema of schemas) {
         this.schemas.set(schema.id, schema);
       }
     } catch (error) {
-      logger.error('Failed to load schemas', { error: error instanceof Error ? error.message : error });
+      logger.error('Failed to load schemas', {
+        error: error instanceof Error ? error.message : error,
+      });
       throw error;
     }
   }
@@ -45,10 +49,14 @@ export class SchemaProvider {
   searchSchemas(query: string): APISchema[] {
     const lowerQuery = query.toLowerCase();
     return Array.from(this.schemas.values()).filter(
-      schema => 
+      schema =>
         schema.name.toLowerCase().includes(lowerQuery) ||
         schema.description?.toLowerCase().includes(lowerQuery) ||
         schema.baseURL.toLowerCase().includes(lowerQuery)
     );
+  }
+
+  getSchemaDirectory(): string {
+    return this.config.schemaDirectory;
   }
 }

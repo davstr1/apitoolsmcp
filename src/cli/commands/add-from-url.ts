@@ -11,6 +11,9 @@ import { getConfig } from '../../config/loader';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
+import { InvalidInputError, FileWriteError } from '../../errors';
+import { errorHandler } from '../../errors/error-handler';
+import { logger } from '../../utils/logger';
 
 export async function addFromUrlCommand(): Promise<void> {
   try {
@@ -22,7 +25,7 @@ export async function addFromUrlCommand(): Promise<void> {
         type: 'input',
         name: 'apiUrl',
         message: 'Enter the API endpoint URL:',
-        validate: (input) => {
+        validate: input => {
           try {
             new URL(input);
             return true;
@@ -33,11 +36,17 @@ export async function addFromUrlCommand(): Promise<void> {
       },
     ]);
 
-    // Parse URL
+    // Parse and validate URL
     const parsedUrl = new URL(apiUrl);
+
+    // Validate URL protocol
+    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+      throw new InvalidInputError('url', apiUrl, 'HTTP or HTTPS URL');
+    }
+
     const baseUrl = `${parsedUrl.protocol}//${parsedUrl.host}`;
     const pathWithQuery = `${parsedUrl.pathname}${parsedUrl.search}`;
-    
+
     console.log(chalk.gray(`Base URL: ${baseUrl}`));
     console.log(chalk.gray(`Path: ${pathWithQuery}`));
 
@@ -48,14 +57,14 @@ export async function addFromUrlCommand(): Promise<void> {
         name: 'id',
         message: 'API ID (unique identifier):',
         default: parsedUrl.hostname.replace(/\./g, '-'),
-        validate: (input) => input.length > 0 || 'API ID is required',
+        validate: input => input.length > 0 || 'API ID is required',
       },
       {
         type: 'input',
         name: 'name',
         message: 'API Name:',
         default: parsedUrl.hostname,
-        validate: (input) => input.length > 0 || 'API name is required',
+        validate: input => input.length > 0 || 'API name is required',
       },
       {
         type: 'input',
@@ -78,7 +87,7 @@ export async function addFromUrlCommand(): Promise<void> {
     // Step 4: Configure headers
     console.log(chalk.cyan('\n📋 Configure Headers\n'));
     const headers: Record<string, string> = {};
-    
+
     const { useCommonHeaders } = await inquirer.prompt([
       {
         type: 'checkbox',
@@ -111,7 +120,7 @@ export async function addFromUrlCommand(): Promise<void> {
     }
 
     // Add custom headers
-    let addMore = true;
+    const addMore = true;
     while (addMore) {
       const { addCustom } = await inquirer.prompt([
         {
@@ -129,13 +138,13 @@ export async function addFromUrlCommand(): Promise<void> {
           type: 'input',
           name: 'name',
           message: 'Header name:',
-          validate: (input) => input.length > 0 || 'Header name is required',
+          validate: input => input.length > 0 || 'Header name is required',
         },
         {
           type: 'input',
           name: 'value',
           message: 'Header value:',
-          validate: (input) => input.length > 0 || 'Header value is required',
+          validate: input => input.length > 0 || 'Header value is required',
         },
       ]);
 
@@ -148,7 +157,7 @@ export async function addFromUrlCommand(): Promise<void> {
 
     // Step 6: Test the API
     console.log(chalk.cyan('\n🧪 Testing API...\n'));
-    
+
     const { confirmTest } = await inquirer.prompt([
       {
         type: 'confirm',
@@ -165,22 +174,29 @@ export async function addFromUrlCommand(): Promise<void> {
         url: apiUrl,
         method: method as HttpMethod,
         headers,
-        params: parameters.reduce((acc, p) => {
-          if (p.location === 'query' && p.value) {
-            acc[p.name] = p.value;
-          }
-          return acc;
-        }, {} as Record<string, string>),
+        params: parameters.reduce(
+          (acc, p) => {
+            if (p.location === 'query' && p.value) {
+              acc[p.name] = p.value;
+            }
+            return acc;
+          },
+          {} as Record<string, string>
+        ),
       });
 
       if (testResult.success) {
-        console.log(chalk.green(`✓ Request successful (${testResult.response.status} ${testResult.response.statusText})`));
+        console.log(
+          chalk.green(
+            `✓ Request successful (${testResult.response.status} ${testResult.response.statusText})`
+          )
+        );
         console.log(chalk.gray(`Response time: ${testResult.response.responseTime}ms`));
 
         // Analyze response
         const analyzer = new ResponseAnalyzer();
         const analysis = await analyzer.analyze(testResult.response);
-        
+
         // Generate schema
         const generator = new SchemaGenerator();
         schema = await generator.generate({
@@ -197,11 +213,10 @@ export async function addFromUrlCommand(): Promise<void> {
         // Show preview
         console.log(chalk.cyan('\n📄 Generated Schema Preview:\n'));
         console.log(chalk.gray(yaml.dump(schema, { indent: 2 })));
-
       } else {
         console.log(chalk.red(`✗ Request failed: ${testResult.error}`));
         console.log(chalk.yellow('Generating schema without response analysis...'));
-        
+
         // Generate basic schema without response
         const generator = new SchemaGenerator();
         schema = await generator.generateBasic({
@@ -242,15 +257,24 @@ export async function addFromUrlCommand(): Promise<void> {
       const filename = `${apiInfo.id}.yaml`;
       const filepath = path.join(config.schemaDirectory, filename);
 
-      await fs.mkdir(config.schemaDirectory, { recursive: true });
-      await fs.writeFile(filepath, yamlContent, 'utf-8');
+      try {
+        await fs.mkdir(config.schemaDirectory, { recursive: true });
+        await fs.writeFile(filepath, yamlContent, 'utf-8');
+      } catch (error) {
+        throw new FileWriteError(filepath, error as Error);
+      }
 
       console.log(chalk.green(`\n✓ API schema saved successfully: ${filepath}`));
       console.log(chalk.gray('\nThe API is now available for use with the MCP server.'));
     }
-
   } catch (error) {
-    console.error(chalk.red('Error adding API from URL:'), error);
+    const errorResponse = errorHandler.handle(error as Error);
+    console.error(chalk.red('Error adding API from URL:'), errorResponse.error.message);
+
+    if (errorResponse.error.details) {
+      logger.debug('Error details', errorResponse.error.details);
+    }
+
     process.exit(1);
   }
 }

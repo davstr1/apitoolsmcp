@@ -25,7 +25,7 @@ export function createTools(schemaProvider: SchemaProvider): ToolDefinition[] {
       },
     },
     handler: async (request: any) => {
-      const schemas = request.params?.search 
+      const schemas = request.params?.search
         ? schemaProvider.searchSchemas(request.params.search)
         : schemaProvider.listSchemas();
 
@@ -69,10 +69,12 @@ export function createTools(schemaProvider: SchemaProvider): ToolDefinition[] {
 
       if (!schema) {
         return {
-          content: [{
-            type: 'text',
-            text: `API schema with ID '${apiId}' not found`,
-          }],
+          content: [
+            {
+              type: 'text',
+              text: `API schema with ID '${apiId}' not found`,
+            },
+          ],
         };
       }
 
@@ -114,23 +116,25 @@ export function createTools(schemaProvider: SchemaProvider): ToolDefinition[] {
 
       if (!schema) {
         return {
-          content: [{
-            type: 'text',
-            text: `API schema with ID '${apiId}' not found`,
-          }],
+          content: [
+            {
+              type: 'text',
+              text: `API schema with ID '${apiId}' not found`,
+            },
+          ],
         };
       }
 
-      const endpoint = schema.endpoints.find(
-        e => e.path === path && e.method === method
-      );
+      const endpoint = schema.endpoints.find(e => e.path === path && e.method === method);
 
       if (!endpoint) {
         return {
-          content: [{
-            type: 'text',
-            text: `Endpoint ${method} ${path} not found in API '${apiId}'`,
-          }],
+          content: [
+            {
+              type: 'text',
+              text: `Endpoint ${method} ${path} not found in API '${apiId}'`,
+            },
+          ],
         };
       }
 
@@ -140,6 +144,68 @@ export function createTools(schemaProvider: SchemaProvider): ToolDefinition[] {
       };
 
       return { content: [content] };
+    },
+  });
+
+  // Health check tool
+  tools.push({
+    name: 'healthCheck',
+    description: 'Check the health status of the API Tools MCP server',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        verbose: {
+          type: 'boolean',
+          description: 'Return detailed health information',
+          default: false,
+        },
+      },
+    },
+    handler: async (request: any) => {
+      const verbose = request.params?.verbose || false;
+
+      const health = {
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        version: '0.3.0',
+        uptime: process.uptime(),
+        memory: process.memoryUsage(),
+        schemas: {
+          loaded: schemaProvider.listSchemas().length,
+          directory: schemaProvider.getSchemaDirectory(),
+        },
+      };
+
+      if (!verbose) {
+        // Return simple health status
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(
+                {
+                  status: health.status,
+                  timestamp: health.timestamp,
+                  version: health.version,
+                  schemas_loaded: health.schemas.loaded,
+                },
+                null,
+                2
+              ),
+            },
+          ],
+        };
+      }
+
+      // Return detailed health information
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(health, null, 2),
+          },
+        ],
+      };
     },
   });
 

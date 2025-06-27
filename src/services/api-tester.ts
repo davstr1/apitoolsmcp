@@ -4,14 +4,32 @@ import * as http from 'http';
 import { URL } from 'url';
 import { HttpRequest, HttpResponse, ApiTestResult, RawHttpOptions } from '../types/http';
 import { logger } from '../utils/logger';
+import {
+  NetworkError,
+  RequestTimeoutError,
+  ConnectionRefusedError,
+  DnsLookupError,
+} from '../errors';
+import { Validator, ValidationSchema } from '../utils/validators';
 
 export class ApiTester {
   private defaultTimeout = 30000; // 30 seconds
 
-  async executeRequest(
-    request: HttpRequest,
-    options: RawHttpOptions = {}
-  ): Promise<ApiTestResult> {
+  private requestSchema: ValidationSchema = {
+    url: {
+      required: true,
+      ...Validator.common.url,
+    },
+    method: {
+      required: true,
+      ...Validator.common.httpMethod,
+    },
+  };
+
+  async executeRequest(request: HttpRequest, options: RawHttpOptions = {}): Promise<ApiTestResult> {
+    // Validate request
+    Validator.validate(request, this.requestSchema);
+
     const startTime = Date.now();
     const timestamp = new Date().toISOString();
 
@@ -35,7 +53,34 @@ export class ApiTester {
       };
     } catch (error) {
       const responseTime = Date.now() - startTime;
-      
+
+      // Transform error to our custom error types
+      let customError: Error;
+      if (error instanceof Error) {
+        if (error.message.includes('timeout')) {
+          customError = new RequestTimeoutError(
+            request.url,
+            request.timeout || this.defaultTimeout
+          );
+        } else if (error.message.includes('ECONNREFUSED')) {
+          customError = new ConnectionRefusedError(request.url, error);
+        } else if (error.message.includes('ENOTFOUND') || error.message.includes('getaddrinfo')) {
+          const url = new URL(request.url);
+          customError = new DnsLookupError(url.hostname, error);
+        } else {
+          customError = new NetworkError(`Request failed: ${error.message}`, error);
+        }
+      } else {
+        customError = new NetworkError(`Request failed: ${String(error)}`);
+      }
+
+      logger.error('Request failed', {
+        url: request.url,
+        method: request.method,
+        error: customError.message,
+        responseTime,
+      });
+
       return {
         request,
         response: {
@@ -47,7 +92,7 @@ export class ApiTester {
         },
         timestamp,
         success: false,
-        error: error instanceof Error ? error.message : String(error),
+        error: customError.message,
       };
     }
   }
@@ -57,7 +102,7 @@ export class ApiTester {
     options: RawHttpOptions
   ): Promise<HttpResponse> {
     const url = new URL(request.url);
-    
+
     // Apply query parameters
     if (request.params) {
       Object.entries(request.params).forEach(([key, value]) => {
@@ -73,9 +118,8 @@ export class ApiTester {
     };
 
     if (request.body && ['POST', 'PUT', 'PATCH'].includes(request.method)) {
-      fetchOptions.body = typeof request.body === 'string' 
-        ? request.body 
-        : JSON.stringify(request.body);
+      fetchOptions.body =
+        typeof request.body === 'string' ? request.body : JSON.stringify(request.body);
     }
 
     logger.debug('Request details', {
@@ -86,7 +130,7 @@ export class ApiTester {
     });
 
     const response = await fetch(url.toString(), fetchOptions);
-    
+
     const responseHeaders: Record<string, string> = {};
     response.headers.forEach((value, key) => {
       responseHeaders[key] = value;
@@ -94,7 +138,7 @@ export class ApiTester {
 
     let body: any;
     const contentType = response.headers.get('content-type') || '';
-    
+
     if (contentType.includes('application/json')) {
       body = await response.json();
     } else if (contentType.includes('text/')) {
@@ -142,10 +186,10 @@ export class ApiTester {
         headers: options.headers,
       });
 
-      const req = lib.request(options, (res) => {
+      const req = lib.request(options, res => {
         let data = '';
-        
-        res.on('data', (chunk) => {
+
+        res.on('data', chunk => {
           data += chunk;
         });
 
@@ -159,7 +203,7 @@ export class ApiTester {
 
           let body: any = data;
           const contentType = res.headers['content-type'] || '';
-          
+
           if (contentType.includes('application/json')) {
             try {
               body = JSON.parse(data);
@@ -178,7 +222,7 @@ export class ApiTester {
         });
       });
 
-      req.on('error', (error) => {
+      req.on('error', error => {
         reject(error);
       });
 
@@ -188,9 +232,8 @@ export class ApiTester {
       });
 
       if (request.body && ['POST', 'PUT', 'PATCH'].includes(request.method)) {
-        const bodyData = typeof request.body === 'string' 
-          ? request.body 
-          : JSON.stringify(request.body);
+        const bodyData =
+          typeof request.body === 'string' ? request.body : JSON.stringify(request.body);
         req.write(bodyData);
       }
 

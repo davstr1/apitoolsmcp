@@ -1,5 +1,6 @@
 import Ajv from 'ajv';
 import { APISchema } from '../types/api-schema';
+import { InvalidSchemaError } from '../errors';
 
 export interface ValidationResult {
   valid: boolean;
@@ -17,17 +18,29 @@ export class Validator {
 
   validate(schema: APISchema): ValidationResult {
     const valid = this.schemaValidator(schema);
-    
+
     if (!valid) {
+      const errors = this.schemaValidator.errors?.map(
+        (err: any) => `${err.instancePath} ${err.message}`
+      ) || ['Unknown validation error'];
+
       return {
         valid: false,
-        errors: this.schemaValidator.errors?.map((err: any) => 
-          `${err.instancePath} ${err.message}`
-        ),
+        errors,
       };
     }
 
     return { valid: true };
+  }
+
+  validateOrThrow(schema: APISchema, schemaPath?: string): void {
+    const result = this.validate(schema);
+    if (!result.valid) {
+      throw new InvalidSchemaError(
+        schemaPath || 'unknown',
+        result.errors || ['Unknown validation error']
+      );
+    }
   }
 
   private getAPISchemaSchema() {
@@ -47,7 +60,10 @@ export class Validator {
             required: ['path', 'method'],
             properties: {
               path: { type: 'string' },
-              method: { type: 'string', enum: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'] },
+              method: {
+                type: 'string',
+                enum: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'],
+              },
               description: { type: 'string' },
               parameters: {
                 type: 'array',
@@ -56,7 +72,10 @@ export class Validator {
                   required: ['name', 'type', 'required'],
                   properties: {
                     name: { type: 'string' },
-                    type: { type: 'string', enum: ['string', 'number', 'boolean', 'array', 'object'] },
+                    type: {
+                      type: 'string',
+                      enum: ['string', 'number', 'boolean', 'array', 'object'],
+                    },
                     required: { type: 'boolean' },
                     description: { type: 'string' },
                   },

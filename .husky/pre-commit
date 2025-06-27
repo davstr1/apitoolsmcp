@@ -1,0 +1,5 @@
+# Run lint-staged
+npx lint-staged
+
+# Run TypeScript check
+npm run build -- --noEmit

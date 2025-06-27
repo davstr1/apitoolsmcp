@@ -61,5 +61,11 @@
     "openapi-types": "^12.1.3",
     "to-json-schema": "^0.2.5",
     "winston": "^3.17.0"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ]
   }
 }

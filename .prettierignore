@@ -1,0 +1,13 @@
+node_modules/
+dist/
+coverage/
+logs/
+*.log
+.git
+.vscode
+.idea
+*.yml
+*.yaml
+package-lock.json
+tsconfig.json
+tsconfig.*.json

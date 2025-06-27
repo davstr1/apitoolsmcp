@@ -1,9 +1,9 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { 
-  CallToolRequestSchema, 
+import {
+  CallToolRequestSchema,
   ListToolsRequestSchema,
-  Tool
+  Tool,
 } from '@modelcontextprotocol/sdk/types.js';
 import { SchemaProvider } from './schema-provider';
 import { Config } from '../types/config';
@@ -29,7 +29,7 @@ export class MCPServer {
 
     this.schemaProvider = new SchemaProvider(config);
     this.transport = new StdioServerTransport();
-    
+
     this.setupHandlers();
     this.setupErrorHandlers();
   }
@@ -88,37 +88,53 @@ export class MCPServer {
             required: ['apiId', 'path', 'method'],
           },
         },
+        {
+          name: 'healthCheck',
+          description: 'Check the health status of the API Tools MCP server',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              verbose: {
+                type: 'boolean',
+                description: 'Return detailed health information',
+                default: false,
+              },
+            },
+          },
+        },
       ];
 
       return { tools };
     });
 
     // Handle tool calls
-    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    this.server.setRequestHandler(CallToolRequestSchema, async request => {
       const { name, arguments: args } = request.params;
 
       switch (name) {
         case 'listAPIs': {
-          const schemas = args?.search 
+          const schemas = args?.search
             ? this.schemaProvider.searchSchemas(args.search as string)
             : this.schemaProvider.listSchemas();
 
           return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify(
-                schemas.map(s => ({
-                  id: s.id,
-                  name: s.name,
-                  version: s.version,
-                  description: s.description,
-                  baseURL: s.baseURL,
-                  endpointCount: s.endpoints.length,
-                })),
-                null,
-                2
-              ),
-            }],
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(
+                  schemas.map(s => ({
+                    id: s.id,
+                    name: s.name,
+                    version: s.version,
+                    description: s.description,
+                    baseURL: s.baseURL,
+                    endpointCount: s.endpoints.length,
+                  })),
+                  null,
+                  2
+                ),
+              },
+            ],
           };
         }
 
@@ -128,18 +144,22 @@ export class MCPServer {
 
           if (!schema) {
             return {
-              content: [{
-                type: 'text',
-                text: `API schema with ID '${apiId}' not found`,
-              }],
+              content: [
+                {
+                  type: 'text',
+                  text: `API schema with ID '${apiId}' not found`,
+                },
+              ],
             };
           }
 
           return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify(schema, null, 2),
-            }],
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(schema, null, 2),
+              },
+            ],
           };
         }
 
@@ -149,31 +169,82 @@ export class MCPServer {
 
           if (!schema) {
             return {
-              content: [{
-                type: 'text',
-                text: `API schema with ID '${apiId}' not found`,
-              }],
+              content: [
+                {
+                  type: 'text',
+                  text: `API schema with ID '${apiId}' not found`,
+                },
+              ],
             };
           }
 
-          const endpoint = schema.endpoints.find(
-            e => e.path === path && e.method === method
-          );
+          const endpoint = schema.endpoints.find(e => e.path === path && e.method === method);
 
           if (!endpoint) {
             return {
-              content: [{
-                type: 'text',
-                text: `Endpoint ${method} ${path} not found in API '${apiId}'`,
-              }],
+              content: [
+                {
+                  type: 'text',
+                  text: `Endpoint ${method} ${path} not found in API '${apiId}'`,
+                },
+              ],
             };
           }
 
           return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify(endpoint, null, 2),
-            }],
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(endpoint, null, 2),
+              },
+            ],
+          };
+        }
+
+        case 'healthCheck': {
+          const verbose = args?.verbose || false;
+
+          const health = {
+            status: 'healthy',
+            timestamp: new Date().toISOString(),
+            version: '0.3.0',
+            uptime: process.uptime(),
+            memory: process.memoryUsage(),
+            schemas: {
+              loaded: this.schemaProvider.listSchemas().length,
+              directory: this.schemaProvider.getSchemaDirectory(),
+            },
+          };
+
+          if (!verbose) {
+            // Return simple health status
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(
+                    {
+                      status: health.status,
+                      timestamp: health.timestamp,
+                      version: health.version,
+                      schemas_loaded: health.schemas.loaded,
+                    },
+                    null,
+                    2
+                  ),
+                },
+              ],
+            };
+          }
+
+          // Return detailed health information
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(health, null, 2),
+              },
+            ],
           };
         }
 
@@ -184,26 +255,32 @@ export class MCPServer {
   }
 
   private setupErrorHandlers(): void {
-    this.server.onerror = (error) => {
-      mcpLogger.error('MCP Server Error', { error: error instanceof Error ? error.message : error });
+    this.server.onerror = error => {
+      mcpLogger.error('MCP Server Error', {
+        error: error instanceof Error ? error.message : error,
+      });
     };
 
-    process.on('unhandledRejection', (error) => {
-      mcpLogger.error('Unhandled Rejection', { error: error instanceof Error ? error.message : error });
+    process.on('unhandledRejection', error => {
+      mcpLogger.error('Unhandled Rejection', {
+        error: error instanceof Error ? error.message : error,
+      });
     });
   }
 
   async start(): Promise<void> {
     mcpLogger.info('Starting MCP Server...');
-    
+
     try {
       await this.schemaProvider.loadSchemas();
       mcpLogger.info('Loaded schemas', { count: this.schemaProvider.getSchemaCount() });
-      
+
       await this.server.connect(this.transport);
       mcpLogger.info('MCP Server connected and ready');
     } catch (error) {
-      mcpLogger.error('Failed to start MCP Server', { error: error instanceof Error ? error.message : error });
+      mcpLogger.error('Failed to start MCP Server', {
+        error: error instanceof Error ? error.message : error,
+      });
       throw error;
     }
   }
