@@ -40,12 +40,15 @@
   },
   "homepage": "https://github.com/davstr1/apitoolsmcp#readme",
   "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
     "@types/inquirer": "^9.0.8",
     "@types/jest": "^30.0.0",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^24.0.4",
     "@types/node-fetch": "^2.6.12",
     "jest": "^30.0.3",
+    "prettier": "^3.6.2",
     "rimraf": "^6.0.1",
     "ts-jest": "^29.4.0",
     "typescript": "^5.8.3"
