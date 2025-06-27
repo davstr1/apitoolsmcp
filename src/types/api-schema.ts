@@ -66,7 +66,7 @@ export interface APISchema {
     details?: any;
   };
   metadata?: {
-    source?: 'yaml' | 'openapi' | 'manual';
+    source?: 'yaml' | 'openapi' | 'manual' | 'tested';
     sourceFile?: string;
     importedAt?: string;
     lastModified?: string;
