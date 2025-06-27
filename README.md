@@ -1,5 +1,10 @@
 # API Tools MCP
 
+[![CI](https://github.com/davstr1/apitoolsmcp/actions/workflows/ci.yml/badge.svg)](https://github.com/davstr1/apitoolsmcp/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/davstr1/apitoolsmcp/branch/main/graph/badge.svg)](https://codecov.io/gh/davstr1/apitoolsmcp)
+[![npm version](https://badge.fury.io/js/api-tools-mcp.svg)](https://badge.fury.io/js/api-tools-mcp)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 MCP (Model Context Protocol) server for serving API schemas to AI assistants. This tool allows you to manage API definitions in YAML format and expose them to AI through the MCP protocol.
 
 ## Features
