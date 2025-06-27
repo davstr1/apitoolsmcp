@@ -1,0 +1,62 @@
+id: github-api
+name: GitHub API
+version: 1.0.0
+description: GitHub REST API v3
+baseURL: https://api.github.com
+endpoints:
+  - path: /users/{username}
+    method: GET
+    description: Get a user
+    parameters:
+      - name: username
+        type: string
+        required: true
+        description: GitHub username
+        example: octocat
+    responses:
+      200:
+        description: User found
+        contentType: application/json
+        example:
+          login: octocat
+          id: 583231
+          node_id: MDQ6VXNlcjU4MzIzMQ==
+          avatar_url: https://avatars.githubusercontent.com/u/583231?v=4
+          type: User
+          name: The Octocat
+      404:
+        description: User not found
+  - path: /users/{username}/repos
+    method: GET
+    description: List user repositories
+    parameters:
+      - name: username
+        type: string
+        required: true
+        description: GitHub username
+      - name: type
+        type: string
+        required: false
+        description: Repository type
+        enum: [all, owner, member]
+        default: owner
+      - name: sort
+        type: string
+        required: false
+        description: Sort repositories by
+        enum: [created, updated, pushed, full_name]
+        default: full_name
+      - name: per_page
+        type: number
+        required: false
+        description: Results per page (max 100)
+        default: 30
+    responses:
+      200:
+        description: List of repositories
+        contentType: application/json
+metadata:
+  source: manual
+  createdAt: 2024-01-10T12:00:00Z
+  importedAt: 2024-01-10T12:00:00Z
+  lastModified: 2024-01-10T12:00:00Z

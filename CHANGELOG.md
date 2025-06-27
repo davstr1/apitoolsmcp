@@ -2,56 +2,47 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.2.0] - 2024-12-27
+## [0.3.0] - 2024-01-10
 
 ### Added
-- 🌐 **URL-based API testing** - Test live APIs and generate schemas from responses
-- 🔍 **OpenAPI auto-discovery** - Automatically find OpenAPI specs in your project
-- 📥 **Full OpenAPI import** - Import OpenAPI v2/v3 specs from URLs or local files
-- 🧪 **Interactive API tester** - Test endpoints with custom headers and parameters
-- 📊 **Response analyzer** - Analyze API responses and generate JSON schemas
-- 🎯 **Better header control** - Full control over HTTP headers with no unwanted defaults
+- 🌐 **Live API Testing**: Test real API endpoints and generate schemas from responses
+- 🔍 **Auto-Discovery**: Automatically find OpenAPI specifications in your project
+- 📊 **Enhanced Metadata**: Track creation dates, test history, and success rates
+- 🧪 **Quick Test Feature**: Test APIs directly from the list command with `--test` flag
+- 📋 **Interactive Parameter Builder**: Build API parameters from URL query strings
+- 🎯 **Full HTTP Control**: Use node-fetch or native HTTP for complete header control
+- 📝 **Response Analysis**: Analyze API responses and generate JSON schemas
+- 📥 **Smart Import**: Import OpenAPI v2/v3 specs with metadata preservation
+- 🎨 **Enhanced Display**: Color-coded status, source icons, and test results
+- 📚 **Example APIs**: Added GitHub, Weather, and JSONPlaceholder examples
 
-### Enhanced
-- `add` command now offers two modes: test live API or create manually
-- `list` command auto-discovers OpenAPI files when no schemas found
-- `import` command fully implemented with preview and confirmation
-- Added node-fetch for better HTTP control (instead of axios)
-- Improved error handling and user feedback
+### Changed
+- Refactored `add` command to support both manual and URL-based creation
+- Improved schema validation with better error messages
+- Updated all schemas to include comprehensive metadata
+- Enhanced list command output with rich information display
 
-### Technical
-- Added services layer for API testing, response analysis, and schema generation
-- Support for both raw HTTP mode and fetch mode
-- TypeScript types for HTTP operations
-- Better separation of concerns
+### Fixed
+- Header injection issues with axios (switched to node-fetch)
+- TypeScript compilation errors with OpenAPI types
+- Response handling for various content types
 
-## [0.1.0] - 2024-12-27
+## [0.2.0] - 2024-01-09
 
 ### Added
-- Initial release of API Tools MCP
-- MCP server for serving API schemas to AI assistants
-- CLI for managing API schemas (add, edit, list, validate)
-- Support for YAML-based API schema definitions
-- Configuration via files and environment variables
-- Comprehensive test suite
-- Full documentation
+- Import OpenAPI specifications from URL or local file
+- Schema validation with detailed error reports
+- Search functionality in list command
 
-### Features
-- Define APIs using simple YAML format
-- Expose API schemas via Model Context Protocol
-- Search and filter APIs
-- Schema validation
-- Configurable schema directory
-- Support for global headers and authentication
+### Changed
+- Improved error handling across all commands
+- Better CLI user experience with colored output
 
-### MCP Tools
-- `listAPIs` - List all available API schemas with optional search
-- `getAPISchema` - Get complete details of a specific API
-- `getEndpoint` - Get details about a specific endpoint
+## [0.1.0] - 2024-01-08
 
-### CLI Commands
-- `add` - Add a new API schema interactively
-- `edit <apiId>` - Edit an existing API schema
-- `list` - List all API schemas with search support
-- `validate [path]` - Validate API schema files
-- `import <url>` - Import OpenAPI spec (placeholder for future)
+### Added
+- Initial release
+- Basic CLI for managing API schemas
+- MCP server implementation
+- YAML schema format support
+- Add, edit, list, and validate commands

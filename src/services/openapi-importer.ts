@@ -59,9 +59,11 @@ export class OpenAPIImporter {
       baseURL,
       endpoints,
       metadata: {
-        source: 'openapi',
+        source: 'imported',
         sourceFile,
+        createdAt: new Date().toISOString(),
         importedAt: new Date().toISOString(),
+        lastModified: new Date().toISOString(),
       },
     };
     
@@ -107,9 +109,11 @@ export class OpenAPIImporter {
       baseURL,
       endpoints,
       metadata: {
-        source: 'openapi',
+        source: 'imported',
         sourceFile,
+        createdAt: new Date().toISOString(),
         importedAt: new Date().toISOString(),
+        lastModified: new Date().toISOString(),
       },
     };
     

@@ -53,6 +53,16 @@ export interface APIEndpoint {
   };
 }
 
+export interface TestResult {
+  timestamp: string;
+  endpoint: string;
+  method: HTTPMethod;
+  statusCode: number;
+  responseTime: number;
+  success: boolean;
+  error?: string;
+}
+
 export interface APISchema {
   id: string;
   name: string;
@@ -66,9 +76,12 @@ export interface APISchema {
     details?: any;
   };
   metadata?: {
-    source?: 'yaml' | 'openapi' | 'manual' | 'tested';
+    source?: 'yaml' | 'openapi' | 'manual' | 'tested' | 'imported';
     sourceFile?: string;
     importedAt?: string;
     lastModified?: string;
+    createdAt?: string;
+    lastTestedAt?: string;
+    testResults?: TestResult[];
   };
 }

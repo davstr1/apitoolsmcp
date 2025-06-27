@@ -13,7 +13,7 @@ const program = new Command();
 program
   .name('api-tools-mcp')
   .description('CLI tool for managing API schemas for MCP')
-  .version('0.2.0');
+  .version('0.3.0');
 
 program
   .command('add')
@@ -29,6 +29,7 @@ program
   .command('list')
   .description('List all API schemas')
   .option('-s, --search <query>', 'Search for APIs by name or description')
+  .option('-t, --test', 'Run quick test on selected API')
   .action(listCommand);
 
 program

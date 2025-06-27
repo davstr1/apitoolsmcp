@@ -91,7 +91,9 @@ export async function addManualCommand(): Promise<void> {
       endpoints,
       metadata: {
         source: 'manual',
+        createdAt: new Date().toISOString(),
         importedAt: new Date().toISOString(),
+        lastModified: new Date().toISOString(),
       },
     };
 

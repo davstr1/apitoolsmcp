@@ -83,7 +83,14 @@ $ api-tools-mcp add
 ```bash
 api-tools-mcp list
 api-tools-mcp list --search "user"
+api-tools-mcp list --test  # Quick test an API
 ```
+
+Enhanced display shows:
+- 📄 Source icon (manual ✏️, tested 🧪, imported 📥)
+- Creation and modification dates
+- Last test date with color coding
+- Test success rate with historical results
 
 If no schemas are found, the CLI will automatically scan for OpenAPI specifications in your project.
 
@@ -169,6 +176,17 @@ endpoints:
         type: string
         required: true
         description: User ID
+metadata:
+  source: tested
+  createdAt: 2024-01-10T12:00:00Z
+  lastTestedAt: 2024-01-10T12:00:00Z
+  testResults:
+    - timestamp: 2024-01-10T12:00:00Z
+      endpoint: /users
+      method: GET
+      statusCode: 200
+      responseTime: 234
+      success: true
 ```
 
 ## MCP Integration

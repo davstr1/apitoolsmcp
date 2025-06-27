@@ -37,8 +37,18 @@ export class SchemaGenerator {
       endpoints: [endpoint],
       metadata: {
         source: 'tested',
+        createdAt: new Date().toISOString(),
         importedAt: new Date().toISOString(),
         lastModified: new Date().toISOString(),
+        lastTestedAt: new Date().toISOString(),
+        testResults: options.testResult ? [{
+          timestamp: new Date().toISOString(),
+          endpoint: options.path,
+          method: options.method as HTTPMethod,
+          statusCode: options.testResult.response.status,
+          responseTime: options.testResult.response.responseTime,
+          success: options.testResult.success,
+        }] : undefined,
       },
     };
 
@@ -85,7 +95,9 @@ export class SchemaGenerator {
       endpoints: [endpoint],
       metadata: {
         source: 'manual',
+        createdAt: new Date().toISOString(),
         importedAt: new Date().toISOString(),
+        lastModified: new Date().toISOString(),
       },
     };
 

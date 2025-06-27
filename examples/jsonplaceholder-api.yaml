@@ -1,0 +1,114 @@
+id: jsonplaceholder-api
+name: JSONPlaceholder API
+version: 1.0.0
+description: Free fake API for testing and prototyping
+baseURL: https://jsonplaceholder.typicode.com
+endpoints:
+  - path: /posts
+    method: GET
+    description: Get all posts
+    responses:
+      200:
+        description: List of posts
+        contentType: application/json
+        example:
+          - userId: 1
+            id: 1
+            title: sunt aut facere repellat provident occaecati excepturi optio reprehenderit
+            body: quia et suscipit\nsuscipit recusandae consequuntur expedita et cum
+  - path: /posts/{id}
+    method: GET
+    description: Get a specific post
+    parameters:
+      - name: id
+        type: number
+        required: true
+        description: Post ID
+        example: 1
+    responses:
+      200:
+        description: Post details
+        contentType: application/json
+      404:
+        description: Post not found
+  - path: /posts
+    method: POST
+    description: Create a new post
+    requestBody:
+      required: true
+      contentType: application/json
+      schema:
+        type: object
+        properties:
+          title:
+            type: string
+          body:
+            type: string
+          userId:
+            type: number
+        required: [title, body, userId]
+      example:
+        title: foo
+        body: bar
+        userId: 1
+    responses:
+      201:
+        description: Created post
+        contentType: application/json
+        example:
+          id: 101
+          title: foo
+          body: bar
+          userId: 1
+  - path: /posts/{id}
+    method: PUT
+    description: Update a post
+    parameters:
+      - name: id
+        type: number
+        required: true
+        description: Post ID
+    requestBody:
+      required: true
+      contentType: application/json
+      schema:
+        type: object
+        properties:
+          id:
+            type: number
+          title:
+            type: string
+          body:
+            type: string
+          userId:
+            type: number
+        required: [id, title, body, userId]
+    responses:
+      200:
+        description: Updated post
+        contentType: application/json
+  - path: /posts/{id}
+    method: DELETE
+    description: Delete a post
+    parameters:
+      - name: id
+        type: number
+        required: true
+        description: Post ID
+    responses:
+      200:
+        description: Post deleted
+        contentType: application/json
+metadata:
+  source: tested
+  createdAt: 2024-01-10T12:00:00Z
+  importedAt: 2024-01-10T12:00:00Z
+  lastModified: 2024-01-10T12:00:00Z
+  lastTestedAt: 2024-01-10T12:00:00Z
+  testResults:
+    - timestamp: 2024-01-10T12:00:00Z
+      endpoint: /posts
+      method: GET
+      statusCode: 200
+      responseTime: 123
+      success: true

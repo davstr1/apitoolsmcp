@@ -1,0 +1,65 @@
+id: weather-api
+name: OpenWeatherMap API
+version: 2.5
+description: Weather data API
+baseURL: https://api.openweathermap.org/data/2.5
+endpoints:
+  - path: /weather
+    method: GET
+    description: Get current weather for a city
+    parameters:
+      - name: q
+        type: string
+        required: true
+        description: City name, state code and country code divided by comma
+        example: London,uk
+      - name: appid
+        type: string
+        required: true
+        description: Your API key
+      - name: units
+        type: string
+        required: false
+        description: Units of measurement
+        enum: [standard, metric, imperial]
+        default: standard
+      - name: lang
+        type: string
+        required: false
+        description: Language for output
+        example: en
+    responses:
+      200:
+        description: Weather data
+        contentType: application/json
+        example:
+          coord:
+            lon: -0.1257
+            lat: 51.5085
+          weather:
+            - id: 803
+              main: Clouds
+              description: broken clouds
+              icon: 04d
+          main:
+            temp: 285.52
+            feels_like: 284.89
+            temp_min: 284.15
+            temp_max: 286.48
+            pressure: 1016
+            humidity: 79
+          name: London
+      401:
+        description: Invalid API key
+      404:
+        description: City not found
+globalHeaders:
+  - name: X-API-Key
+    required: true
+    description: Your OpenWeatherMap API key
+    example: YOUR_API_KEY_HERE
+metadata:
+  source: manual
+  createdAt: 2024-01-10T12:00:00Z
+  importedAt: 2024-01-10T12:00:00Z
+  lastModified: 2024-01-10T12:00:00Z
