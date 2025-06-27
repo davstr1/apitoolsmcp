@@ -2,6 +2,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { APISchema } from '../types/api-schema';
 import { Parser } from './parser';
+import { logger } from '../utils/logger';
 
 export class YAMLScanner {
   private directory: string;
@@ -25,13 +26,13 @@ export class YAMLScanner {
             schemas.push(schema);
           }
         } catch (error) {
-          console.error(`Failed to parse ${file}:`, error);
+          logger.error('Failed to parse file', { file, error: error instanceof Error ? error.message : error });
         }
       }
       
       return schemas;
     } catch (error) {
-      console.error(`Failed to scan directory ${this.directory}:`, error);
+      logger.error('Failed to scan directory', { directory: this.directory, error: error instanceof Error ? error.message : error });
       return schemas;
     }
   }
@@ -53,7 +54,7 @@ export class YAMLScanner {
         }
       }
     } catch (error) {
-      console.error(`Error reading directory ${dir}:`, error);
+      logger.error('Error reading directory', { directory: dir, error: error instanceof Error ? error.message : error });
     }
     
     return yamlFiles;

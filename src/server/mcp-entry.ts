@@ -2,6 +2,7 @@
 
 import { MCPServer } from './index';
 import { getConfig } from '../config/loader';
+import { mcpLogger } from '../utils/logger';
 
 async function main() {
   try {
@@ -20,7 +21,7 @@ async function main() {
       process.exit(0);
     });
   } catch (error) {
-    console.error('Failed to start MCP server:', error);
+    mcpLogger.error('Failed to start MCP server', { error: error instanceof Error ? error.message : error });
     process.exit(1);
   }
 }

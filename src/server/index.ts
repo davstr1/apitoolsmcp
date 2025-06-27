@@ -7,6 +7,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { SchemaProvider } from './schema-provider';
 import { Config } from '../types/config';
+import { mcpLogger } from '../utils/logger';
 
 export class MCPServer {
   private server: Server;
@@ -184,31 +185,31 @@ export class MCPServer {
 
   private setupErrorHandlers(): void {
     this.server.onerror = (error) => {
-      console.error('[MCP Server Error]', error);
+      mcpLogger.error('MCP Server Error', { error: error instanceof Error ? error.message : error });
     };
 
     process.on('unhandledRejection', (error) => {
-      console.error('[Unhandled Rejection]', error);
+      mcpLogger.error('Unhandled Rejection', { error: error instanceof Error ? error.message : error });
     });
   }
 
   async start(): Promise<void> {
-    console.error('[MCP Server] Starting...');
+    mcpLogger.info('Starting MCP Server...');
     
     try {
       await this.schemaProvider.loadSchemas();
-      console.error(`[MCP Server] Loaded ${this.schemaProvider.getSchemaCount()} schemas`);
+      mcpLogger.info('Loaded schemas', { count: this.schemaProvider.getSchemaCount() });
       
       await this.server.connect(this.transport);
-      console.error('[MCP Server] Connected and ready');
+      mcpLogger.info('MCP Server connected and ready');
     } catch (error) {
-      console.error('[MCP Server] Failed to start:', error);
+      mcpLogger.error('Failed to start MCP Server', { error: error instanceof Error ? error.message : error });
       throw error;
     }
   }
 
   async stop(): Promise<void> {
-    console.error('[MCP Server] Stopping...');
+    mcpLogger.info('Stopping MCP Server...');
     await this.server.close();
   }
 }

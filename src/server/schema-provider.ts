@@ -1,6 +1,7 @@
 import { APISchema } from '../types/api-schema';
 import { Config } from '../types/config';
 import { YAMLScanner } from '../schemas/yaml-scanner';
+import { logger } from '../utils/logger';
 
 export class SchemaProvider {
   private schemas: Map<string, APISchema> = new Map();
@@ -18,7 +19,7 @@ export class SchemaProvider {
         this.schemas.set(schema.id, schema);
       }
     } catch (error) {
-      console.error('Failed to load schemas:', error);
+      logger.error('Failed to load schemas', { error: error instanceof Error ? error.message : error });
       throw error;
     }
   }

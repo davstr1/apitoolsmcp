@@ -3,6 +3,7 @@ import * as yaml from 'js-yaml';
 import * as path from 'path';
 import { APISchema, APIEndpoint, HTTPMethod } from '../types/api-schema';
 import { Validator } from './validator';
+import { logger } from '../utils/logger';
 
 export class Parser {
   private validator: Validator;
@@ -24,13 +25,13 @@ export class Parser {
       
       const validation = this.validator.validate(schema);
       if (!validation.valid) {
-        console.error(`Validation errors in ${filePath}:`, validation.errors);
+        logger.error('Validation errors in file', { filePath, errors: validation.errors });
         return null;
       }
 
       return schema;
     } catch (error) {
-      console.error(`Error parsing ${filePath}:`, error);
+      logger.error('Error parsing file', { filePath, error: error instanceof Error ? error.message : error });
       return null;
     }
   }

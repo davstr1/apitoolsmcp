@@ -3,6 +3,7 @@ import * as https from 'https';
 import * as http from 'http';
 import { URL } from 'url';
 import { HttpRequest, HttpResponse, ApiTestResult, RawHttpOptions } from '../types/http';
+import { logger, logApiRequest } from '../utils/logger';
 
 export class ApiTester {
   private defaultTimeout = 30000; // 30 seconds
@@ -77,13 +78,12 @@ export class ApiTester {
         : JSON.stringify(request.body);
     }
 
-    console.log(`\n🔍 Request Details:`);
-    console.log(`URL: ${url.toString()}`);
-    console.log(`Method: ${request.method}`);
-    console.log(`Headers:`, request.headers);
-    if (request.body) {
-      console.log(`Body:`, request.body);
-    }
+    logger.debug('Request details', {
+      url: url.toString(),
+      method: request.method,
+      headers: request.headers,
+      ...(request.body && { body: request.body }),
+    });
 
     const response = await fetch(url.toString(), fetchOptions);
     
@@ -134,12 +134,13 @@ export class ApiTester {
         timeout: request.timeout || this.defaultTimeout,
       };
 
-      console.log(`\n🔍 Raw Request Details:`);
-      console.log(`Protocol: ${url.protocol}`);
-      console.log(`Host: ${options.hostname}:${options.port}`);
-      console.log(`Path: ${options.path}`);
-      console.log(`Method: ${options.method}`);
-      console.log(`Headers:`, options.headers);
+      logger.debug('Raw request details', {
+        protocol: url.protocol,
+        host: `${options.hostname}:${options.port}`,
+        path: options.path,
+        method: options.method,
+        headers: options.headers,
+      });
 
       const req = lib.request(options, (res) => {
         let data = '';
