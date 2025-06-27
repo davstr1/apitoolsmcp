@@ -7,11 +7,13 @@ import { getConfig } from '../../../src/config/loader';
 import { HTTPMethod } from '../../../src/types/api-schema';
 import { createTempDir, cleanupTempDir } from '../../setup';
 
-jest.mock('inquirer');
+jest.mock('inquirer', () => ({
+  prompt: jest.fn(),
+}));
 jest.mock('../../../src/config/loader');
 
 describe('add-manual command', () => {
-  const mockInquirer = inquirer as jest.Mocked<typeof inquirer>;
+  const mockInquirer = inquirer as unknown as { prompt: jest.Mock };
   const mockGetConfig = getConfig as jest.MockedFunction<typeof getConfig>;
   let tempDir: string;
 

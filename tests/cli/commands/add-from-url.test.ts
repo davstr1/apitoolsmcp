@@ -2,7 +2,6 @@ import { addFromUrlCommand } from '../../../src/cli/commands/add-from-url';
 import * as inquirer from 'inquirer';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import * as yaml from 'js-yaml';
 import { getConfig } from '../../../src/config/loader';
 import { ApiTester } from '../../../src/services/api-tester';
 import { ResponseAnalyzer } from '../../../src/services/response-analyzer';
@@ -10,6 +9,7 @@ import { SchemaGenerator } from '../../../src/services/schema-generator';
 import { buildParameters } from '../../../src/cli/utils/parameter-builder';
 import { createTempDir, cleanupTempDir } from '../../setup';
 import { HttpMethod } from '../../../src/types/http';
+import { HTTPMethod } from '../../../src/types/api-schema';
 
 jest.mock('inquirer');
 jest.mock('../../../src/config/loader');
@@ -63,6 +63,11 @@ describe('add-from-url command', () => {
     const testUrl = 'https://api.example.com/users?page=1';
     const mockResponse = {
       success: true,
+      request: {
+        url: testUrl,
+        method: HTTPMethod.GET,
+        headers: {},
+      },
       response: {
         status: 200,
         statusText: 'OK',
@@ -70,11 +75,15 @@ describe('add-from-url command', () => {
         body: { users: [] },
         responseTime: 150,
       },
+      timestamp: new Date().toISOString(),
     };
 
     const mockAnalysis = {
       contentType: 'application/json',
+      dataType: 'json' as const,
       structure: { type: 'object', properties: { users: { type: 'array' } } },
+      hasArray: true,
+      hasObject: true,
     };
 
     const mockSchema = {
@@ -84,8 +93,8 @@ describe('add-from-url command', () => {
       baseURL: 'https://api.example.com',
       endpoints: [{
         path: '/users',
-        method: HttpMethod.GET,
-        parameters: [{ name: 'page', type: 'number', required: false }],
+        method: HTTPMethod.GET,
+        parameters: [{ name: 'page', type: 'number' as const, required: false }],
       }],
       metadata: {
         source: 'tested',
@@ -101,7 +110,7 @@ describe('add-from-url command', () => {
         name: 'Example API',
         description: 'Test API',
       })
-      .mockResolvedValueOnce({ method: HttpMethod.GET })
+      .mockResolvedValueOnce({ method: 'GET' })
       .mockResolvedValueOnce({ useCommonHeaders: [] })
       .mockResolvedValueOnce({ addCustom: false })
       .mockResolvedValueOnce({ confirmTest: true })
@@ -149,7 +158,7 @@ describe('add-from-url command', () => {
       baseURL: 'https://api.example.com',
       endpoints: [{
         path: '/invalid',
-        method: HttpMethod.GET,
+        method: HTTPMethod.GET,
       }],
     };
 
@@ -160,7 +169,7 @@ describe('add-from-url command', () => {
         name: 'Example API',
         description: '',
       })
-      .mockResolvedValueOnce({ method: HttpMethod.GET })
+      .mockResolvedValueOnce({ method: 'GET' })
       .mockResolvedValueOnce({ useCommonHeaders: [] })
       .mockResolvedValueOnce({ addCustom: false })
       .mockResolvedValueOnce({ confirmTest: true })
@@ -197,7 +206,7 @@ describe('add-from-url command', () => {
         name: 'Example API',
         description: '',
       })
-      .mockResolvedValueOnce({ method: HttpMethod.GET })
+      .mockResolvedValueOnce({ method: 'GET' })
       .mockResolvedValueOnce({ useCommonHeaders: ['Authorization'] })
       .mockResolvedValueOnce({ value: 'Bearer token123' })
       .mockResolvedValueOnce({ addCustom: true })

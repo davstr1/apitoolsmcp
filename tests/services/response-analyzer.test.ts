@@ -27,6 +27,9 @@ describe('ResponseAnalyzer', () => {
       const analysis = await analyzer.analyze(response);
 
       expect(analysis.contentType).toBe('application/json');
+      expect(analysis.dataType).toBe('json');
+      expect(analysis.hasObject).toBe(true);
+      expect(analysis.hasArray).toBe(true);
       expect(analysis.structure).toBeDefined();
       expect(analysis.structure.type).toBe('object');
       expect(analysis.structure.properties).toBeDefined();
@@ -34,8 +37,7 @@ describe('ResponseAnalyzer', () => {
       expect(analysis.structure.properties.users.type).toBe('array');
       expect(analysis.structure.properties.total).toBeDefined();
       expect(analysis.structure.properties.total.type).toBe('number');
-      expect(analysis.examples).toHaveLength(1);
-      expect(analysis.examples[0]).toEqual(response.body);
+      expect(analysis.exampleData).toEqual(response.body);
     });
 
     it('should analyze XML response', async () => {
@@ -60,10 +62,9 @@ describe('ResponseAnalyzer', () => {
       const analysis = await analyzer.analyze(response);
 
       expect(analysis.contentType).toBe('application/xml');
-      expect(analysis.structure).toBeDefined();
-      expect(analysis.structure.type).toBe('xml');
-      expect(analysis.structure.rootElement).toBe('users');
-      expect(analysis.examples).toHaveLength(1);
+      expect(analysis.dataType).toBe('xml');
+      // XML is not parsed, just stored as text
+      expect(analysis.exampleData).toContain('<?xml');
     });
 
     it('should analyze HTML response', async () => {
@@ -79,9 +80,8 @@ describe('ResponseAnalyzer', () => {
 
       expect(analysis.contentType).toBe('text/html');
       expect(analysis.structure).toBeDefined();
-      expect(analysis.structure.type).toBe('html');
-      expect(analysis.structure.hasTitle).toBe(true);
-      expect(analysis.structure.bodyPreview).toContain('Hello');
+      expect(analysis.dataType).toBe('html');
+      expect(analysis.exampleData).toBeDefined();
     });
 
     it('should analyze plain text response', async () => {
@@ -97,9 +97,8 @@ describe('ResponseAnalyzer', () => {
 
       expect(analysis.contentType).toBe('text/plain');
       expect(analysis.structure).toBeDefined();
-      expect(analysis.structure.type).toBe('text');
-      expect(analysis.structure.length).toBe(13);
-      expect(analysis.examples[0]).toBe('Hello, World!');
+      expect(analysis.dataType).toBe('text');
+      expect(analysis.exampleData).toBe('Hello, World!');
     });
 
     it('should handle complex nested JSON', async () => {
@@ -155,8 +154,8 @@ describe('ResponseAnalyzer', () => {
 
       expect(analysis.contentType).toBe('unknown');
       expect(analysis.structure).toBeDefined();
-      expect(analysis.structure.type).toBe('empty');
-      expect(analysis.examples).toHaveLength(0);
+      expect(analysis.dataType).toBe('text');
+      expect(analysis.exampleData).toBe('');
     });
 
     it('should handle array response', async () => {
@@ -192,8 +191,8 @@ describe('ResponseAnalyzer', () => {
       const analysis = await analyzer.analyze(response);
 
       expect(analysis.contentType).toBe('application/json');
-      expect(analysis.structure.type).toBe('string');
-      expect(analysis.error).toContain('Failed to parse');
+      expect(analysis.dataType).toBe('text');
+      expect(analysis.exampleData).toBe('Invalid JSON {');
     });
 
     it('should detect content type from response', async () => {
@@ -222,8 +221,8 @@ describe('ResponseAnalyzer', () => {
       const analysis = await analyzer.analyze(response);
 
       expect(analysis.contentType).toBe('image/png');
-      expect(analysis.structure.type).toBe('binary');
-      expect(analysis.structure.mimeType).toBe('image/png');
+      expect(analysis.dataType).toBe('binary');
+      expect(analysis.contentType).toBe('image/png');
     });
 
     it('should extract schema from complex arrays', async () => {

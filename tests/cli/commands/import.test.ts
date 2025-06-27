@@ -14,6 +14,11 @@ jest.mock('../../../src/services/openapi-importer');
 jest.mock('../../../src/schemas/validator');
 jest.mock('node-fetch');
 
+// Mock process.exit to prevent Jest from actually exiting
+jest.spyOn(process, 'exit').mockImplementation((code?: string | number | null | undefined) => {
+  throw new Error(`process.exit called with code ${code}`);
+});
+
 describe('import command', () => {
   const mockGetConfig = getConfig as jest.MockedFunction<typeof getConfig>;
   const mockOpenAPIImporter = OpenAPIImporter as jest.MockedClass<typeof OpenAPIImporter>;
@@ -41,7 +46,7 @@ describe('import command', () => {
 
     mockValidateSchema = jest.fn();
     mockValidator.mockImplementation(() => ({
-      validateSchema: mockValidateSchema,
+      validate: mockValidateSchema,
     } as any));
   });
 

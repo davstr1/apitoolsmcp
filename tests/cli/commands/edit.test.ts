@@ -9,13 +9,15 @@ import { Validator } from '../../../src/schemas/validator';
 import { createTempDir, cleanupTempDir } from '../../setup';
 import { APISchema, HTTPMethod } from '../../../src/types/api-schema';
 
-jest.mock('inquirer');
+jest.mock('inquirer', () => ({
+  prompt: jest.fn(),
+}));
 jest.mock('../../../src/config/loader');
 jest.mock('../../../src/schemas/yaml-scanner');
 jest.mock('../../../src/schemas/validator');
 
 describe('edit command', () => {
-  const mockInquirer = inquirer as jest.Mocked<typeof inquirer>;
+  const mockInquirer = inquirer as unknown as { prompt: jest.Mock };
   const mockGetConfig = getConfig as jest.MockedFunction<typeof getConfig>;
   const mockYAMLScanner = YAMLScanner as jest.MockedClass<typeof YAMLScanner>;
   const mockValidator = Validator as jest.MockedClass<typeof Validator>;

@@ -3,12 +3,14 @@ import * as inquirer from 'inquirer';
 import * as addManual from '../../../src/cli/commands/add-manual';
 import * as addFromUrl from '../../../src/cli/commands/add-from-url';
 
-jest.mock('inquirer');
+jest.mock('inquirer', () => ({
+  prompt: jest.fn(),
+}));
 jest.mock('../../../src/cli/commands/add-manual');
 jest.mock('../../../src/cli/commands/add-from-url');
 
 describe('add command', () => {
-  const mockInquirer = inquirer as jest.Mocked<typeof inquirer>;
+  const mockInquirer = inquirer as unknown as { prompt: jest.Mock };
   const mockAddManual = addManual as jest.Mocked<typeof addManual>;
   const mockAddFromUrl = addFromUrl as jest.Mocked<typeof addFromUrl>;
 

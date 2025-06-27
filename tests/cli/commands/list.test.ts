@@ -2,7 +2,6 @@ import { listCommand } from '../../../src/cli/commands/list';
 import * as inquirer from 'inquirer';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import * as yaml from 'js-yaml';
 import { getConfig } from '../../../src/config/loader';
 import { YAMLScanner } from '../../../src/schemas/yaml-scanner';
 import { OpenAPIScanner } from '../../../src/services/openapi-scanner';
@@ -10,14 +9,16 @@ import { ApiTester } from '../../../src/services/api-tester';
 import { createTempDir, cleanupTempDir } from '../../setup';
 import { APISchema, HTTPMethod } from '../../../src/types/api-schema';
 
-jest.mock('inquirer');
+jest.mock('inquirer', () => ({
+  prompt: jest.fn(),
+}));
 jest.mock('../../../src/config/loader');
 jest.mock('../../../src/schemas/yaml-scanner');
 jest.mock('../../../src/services/openapi-scanner');
 jest.mock('../../../src/services/api-tester');
 
 describe('list command', () => {
-  const mockInquirer = inquirer as jest.Mocked<typeof inquirer>;
+  const mockInquirer = inquirer as unknown as { prompt: jest.Mock };
   const mockGetConfig = getConfig as jest.MockedFunction<typeof getConfig>;
   const mockYAMLScanner = YAMLScanner as jest.MockedClass<typeof YAMLScanner>;
   const mockOpenAPIScanner = OpenAPIScanner as jest.MockedClass<typeof OpenAPIScanner>;

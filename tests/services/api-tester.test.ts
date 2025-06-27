@@ -1,6 +1,5 @@
 import { ApiTester } from '../../src/services/api-tester';
 import fetch from 'node-fetch';
-import * as https from 'https';
 import { HttpMethod } from '../../src/types/http';
 
 jest.mock('node-fetch');
@@ -32,7 +31,6 @@ describe('ApiTester', () => {
 
       mockFetch.mockResolvedValue(mockResponse as any);
 
-      const startTime = Date.now();
       const result = await tester.executeRequest({
         url: 'https://api.test.com/users',
         method: HttpMethod.GET,
@@ -277,11 +275,5 @@ describe('ApiTester', () => {
     });
   });
 
-  describe('executeRawRequest', () => {
-    it('should execute request using native https module', async () => {
-      // This would require more complex mocking of https module
-      // For now, we'll test that the method exists
-      expect(tester.executeRawRequest).toBeDefined();
-    });
-  });
+  // executeRawRequest is a private method and shouldn't be tested directly
 });

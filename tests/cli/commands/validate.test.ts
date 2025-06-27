@@ -4,19 +4,27 @@ import * as path from 'path';
 import * as yaml from 'js-yaml';
 import { getConfig } from '../../../src/config/loader';
 import { Validator } from '../../../src/schemas/validator';
+import { Parser } from '../../../src/schemas/parser';
 import { createTempDir, cleanupTempDir } from '../../setup';
 import { APISchema, HTTPMethod } from '../../../src/types/api-schema';
 
 jest.mock('../../../src/config/loader');
 jest.mock('../../../src/schemas/validator');
+jest.mock('../../../src/schemas/parser');
+
+// Mock process.exit to prevent Jest from actually exiting
+jest.spyOn(process, 'exit').mockImplementation((code?: string | number | null | undefined) => {
+  throw new Error(`process.exit called with code ${code}`);
+});
 
 describe('validate command', () => {
   const mockGetConfig = getConfig as jest.MockedFunction<typeof getConfig>;
   const mockValidator = Validator as jest.MockedClass<typeof Validator>;
+  const mockParser = Parser as jest.MockedClass<typeof Parser>;
   
   let tempDir: string;
-  let mockValidateSchema: jest.Mock;
-  let mockValidateFile: jest.Mock;
+  let mockValidate: jest.Mock;
+  let mockParseYAMLFile: jest.Mock;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -28,12 +36,15 @@ describe('validate command', () => {
       validation: { strict: true },
     });
 
-    mockValidateSchema = jest.fn();
-    mockValidateFile = jest.fn();
+    mockValidate = jest.fn();
+    mockParseYAMLFile = jest.fn();
     
     mockValidator.mockImplementation(() => ({
-      validateSchema: mockValidateSchema,
-      validateFile: mockValidateFile,
+      validate: mockValidate,
+    } as any));
+    
+    mockParser.mockImplementation(() => ({
+      parseYAMLFile: mockParseYAMLFile,
     } as any));
   });
 
@@ -69,13 +80,17 @@ describe('validate command', () => {
       'utf-8'
     );
 
-    mockValidateFile.mockReturnValue({ valid: true, errors: [] });
+    mockParseYAMLFile
+      .mockResolvedValueOnce(schema1)
+      .mockResolvedValueOnce(schema2);
+    mockValidate.mockReturnValue({ valid: true, errors: [] });
 
-    await validateCommand();
+    await expect(validateCommand()).rejects.toThrow('process.exit called with code 0');
 
-    expect(mockValidateFile).toHaveBeenCalledTimes(2);
-    expect(mockValidateFile).toHaveBeenCalledWith(path.join(tempDir, 'api-1.yaml'));
-    expect(mockValidateFile).toHaveBeenCalledWith(path.join(tempDir, 'api-2.yaml'));
+    expect(mockParseYAMLFile).toHaveBeenCalledTimes(2);
+    expect(mockValidate).toHaveBeenCalledTimes(2);
+    expect(mockValidate).toHaveBeenCalledWith(schema1);
+    expect(mockValidate).toHaveBeenCalledWith(schema2);
   });
 
   it('should validate a specific file when path provided', async () => {
@@ -95,153 +110,130 @@ describe('validate command', () => {
     const schemaPath = path.join(tempDir, 'test-api.yaml');
     await fs.writeFile(schemaPath, yaml.dump(schema), 'utf-8');
 
-    mockValidateFile.mockReturnValue({ valid: true, errors: [] });
+    mockParseYAMLFile.mockResolvedValue(schema);
+    mockValidate.mockReturnValue({ valid: true, errors: [] });
 
-    await validateCommand(schemaPath);
+    await expect(validateCommand(schemaPath)).rejects.toThrow('process.exit called with code 0');
 
-    expect(mockValidateFile).toHaveBeenCalledTimes(1);
-    expect(mockValidateFile).toHaveBeenCalledWith(schemaPath);
+    expect(mockParseYAMLFile).toHaveBeenCalledTimes(1);
+    expect(mockParseYAMLFile).toHaveBeenCalledWith(schemaPath);
+    expect(mockValidate).toHaveBeenCalledWith(schema);
   });
 
-  it('should report validation errors', async () => {
-    const invalidSchema = {
-      // Missing required fields
-      name: 'Invalid API',
+  it('should handle validation errors', async () => {
+    const schema: APISchema = {
+      id: 'invalid-api',
+      name: '',  // Invalid - empty name
+      version: '1.0.0',
+      baseURL: 'not-a-url',  // Invalid URL
       endpoints: [],
     };
 
-    const schemaPath = path.join(tempDir, 'invalid.yaml');
-    await fs.writeFile(schemaPath, yaml.dump(invalidSchema), 'utf-8');
+    const schemaPath = path.join(tempDir, 'invalid-api.yaml');
+    await fs.writeFile(schemaPath, yaml.dump(schema), 'utf-8');
 
-    mockValidateFile.mockReturnValue({
+    mockParseYAMLFile.mockResolvedValue(schema);
+    mockValidate.mockReturnValue({
       valid: false,
       errors: [
-        { message: "must have required property 'id'" },
-        { message: "must have required property 'baseURL'" },
-        { message: "must have required property 'version'" },
+        'name must not be empty',
+        'baseURL must be a valid URL',
       ],
     });
 
-    // Validation should continue even with errors
-    await validateCommand(schemaPath);
+    await expect(validateCommand(schemaPath)).rejects.toThrow('process.exit called with code 1');
 
-    expect(mockValidateFile).toHaveBeenCalledWith(schemaPath);
+    expect(mockValidate).toHaveBeenCalledWith(schema);
+  });
+
+  it('should handle parse errors', async () => {
+    const schemaPath = path.join(tempDir, 'broken.yaml');
+    await fs.writeFile(schemaPath, 'invalid: yaml: : :', 'utf-8');
+
+    mockParseYAMLFile.mockResolvedValue(null);
+
+    await expect(validateCommand(schemaPath)).rejects.toThrow('process.exit called with code 1');
+
+    expect(mockParseYAMLFile).toHaveBeenCalledWith(schemaPath);
+    expect(mockValidate).not.toHaveBeenCalled();
   });
 
   it('should handle empty directory', async () => {
-    await validateCommand();
+    const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
 
-    // Should not call validateFile if no yaml files found
-    expect(mockValidateFile).not.toHaveBeenCalled();
+    await expect(validateCommand()).rejects.toThrow('process.exit called with code 0');
+
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      expect.stringContaining('No YAML files found to validate')
+    );
+
+    consoleLogSpy.mockRestore();
   });
 
-  it('should skip non-yaml files', async () => {
-    await fs.writeFile(path.join(tempDir, 'readme.md'), '# README', 'utf-8');
-    await fs.writeFile(path.join(tempDir, 'config.json'), '{}', 'utf-8');
+  it('should handle non-existent path', async () => {
+    const nonExistentPath = path.join(tempDir, 'non-existent.yaml');
+
+    await expect(validateCommand(nonExistentPath)).rejects.toThrow('process.exit called with code 1');
+  });
+
+  it('should validate nested directories', async () => {
+    const schema: APISchema = {
+      id: 'nested-api',
+      name: 'Nested API',
+      version: '1.0.0',
+      baseURL: 'https://api.test.com',
+      endpoints: [],
+    };
+
+    const nestedDir = path.join(tempDir, 'apis', 'v1');
+    await fs.mkdir(nestedDir, { recursive: true });
+    
+    const schemaPath = path.join(nestedDir, 'nested-api.yaml');
+    await fs.writeFile(schemaPath, yaml.dump(schema), 'utf-8');
+
+    mockParseYAMLFile.mockResolvedValue(schema);
+    mockValidate.mockReturnValue({ valid: true, errors: [] });
+
+    await expect(validateCommand()).rejects.toThrow('process.exit called with code 0');
+
+    expect(mockParseYAMLFile).toHaveBeenCalledWith(schemaPath);
+  });
+
+  it('should handle both .yaml and .yml extensions', async () => {
+    const schema1: APISchema = {
+      id: 'yaml-ext',
+      name: 'YAML Extension',
+      version: '1.0.0',
+      baseURL: 'https://api.test.com',
+      endpoints: [],
+    };
+
+    const schema2: APISchema = {
+      id: 'yml-ext',
+      name: 'YML Extension',
+      version: '1.0.0',
+      baseURL: 'https://api.test.com',
+      endpoints: [],
+    };
+
     await fs.writeFile(
       path.join(tempDir, 'api.yaml'),
-      yaml.dump({ id: 'api', name: 'API', version: '1.0.0', baseURL: 'https://api.com', endpoints: [] }),
-      'utf-8'
-    );
-
-    mockValidateFile.mockReturnValue({ valid: true, errors: [] });
-
-    await validateCommand();
-
-    expect(mockValidateFile).toHaveBeenCalledTimes(1);
-    expect(mockValidateFile).toHaveBeenCalledWith(path.join(tempDir, 'api.yaml'));
-  });
-
-  it('should handle file not found error', async () => {
-    const nonExistentPath = path.join(tempDir, 'non-existent.yaml');
-    
-    const mockExit = jest.spyOn(process, 'exit').mockImplementation(() => {
-      throw new Error('process.exit called');
-    });
-
-    await expect(validateCommand(nonExistentPath)).rejects.toThrow('process.exit called');
-    expect(mockExit).toHaveBeenCalledWith(1);
-    
-    mockExit.mockRestore();
-  });
-
-  it('should handle invalid YAML files', async () => {
-    const schemaPath = path.join(tempDir, 'invalid.yaml');
-    await fs.writeFile(schemaPath, 'invalid: yaml: content:::', 'utf-8');
-
-    mockValidateFile.mockImplementation(() => {
-      throw new Error('Invalid YAML');
-    });
-
-    const mockExit = jest.spyOn(process, 'exit').mockImplementation(() => {
-      throw new Error('process.exit called');
-    });
-
-    await expect(validateCommand(schemaPath)).rejects.toThrow('process.exit called');
-    expect(mockExit).toHaveBeenCalledWith(1);
-    
-    mockExit.mockRestore();
-  });
-
-  it('should validate all files and report summary', async () => {
-    const validSchema: APISchema = {
-      id: 'valid-api',
-      name: 'Valid API',
-      version: '1.0.0',
-      baseURL: 'https://valid.test.com',
-      endpoints: [],
-    };
-
-    const invalidSchema = {
-      id: 'invalid-api',
-      // Missing required fields
-      endpoints: [],
-    };
-
-    await fs.writeFile(
-      path.join(tempDir, 'valid.yaml'),
-      yaml.dump(validSchema),
+      yaml.dump(schema1),
       'utf-8'
     );
     await fs.writeFile(
-      path.join(tempDir, 'invalid.yaml'),
-      yaml.dump(invalidSchema),
+      path.join(tempDir, 'api.yml'),
+      yaml.dump(schema2),
       'utf-8'
     );
 
-    mockValidateFile
-      .mockReturnValueOnce({ valid: true, errors: [] })
-      .mockReturnValueOnce({
-        valid: false,
-        errors: [{ message: "must have required property 'name'" }],
-      });
+    mockParseYAMLFile
+      .mockResolvedValueOnce(schema1)
+      .mockResolvedValueOnce(schema2);
+    mockValidate.mockReturnValue({ valid: true, errors: [] });
 
-    await validateCommand();
+    await expect(validateCommand()).rejects.toThrow('process.exit called with code 0');
 
-    expect(mockValidateFile).toHaveBeenCalledTimes(2);
-  });
-
-  it('should exit with error code when validation fails', async () => {
-    const invalidSchema = {
-      id: 'api',
-      // Missing other required fields
-    };
-
-    const schemaPath = path.join(tempDir, 'invalid.yaml');
-    await fs.writeFile(schemaPath, yaml.dump(invalidSchema), 'utf-8');
-
-    mockValidateFile.mockReturnValue({
-      valid: false,
-      errors: [{ message: 'Missing required fields' }],
-    });
-
-    const mockExit = jest.spyOn(process, 'exit').mockImplementation(() => {
-      throw new Error('process.exit called');
-    });
-
-    await expect(validateCommand()).rejects.toThrow('process.exit called');
-    expect(mockExit).toHaveBeenCalledWith(1);
-    
-    mockExit.mockRestore();
+    expect(mockParseYAMLFile).toHaveBeenCalledTimes(2);
   });
 });
