@@ -35,7 +35,9 @@
 
 4. **NPM Module** with:
    - Configurable directory support
-   - Multi-workspace compatibility (frontend/backend)
+   - Publishable to npm registry
+   - Local development support
+   - Module can be imported by other projects
 
 5. **Integration Requirements**:
    - Use Context7 MCP for latest library versions
@@ -50,6 +52,8 @@
 - [ ] Configure Jest for testing
 - [ ] Add .gitignore
 - [ ] Setup pre-commit hooks
+- [ ] Configure npm package for publishing
+- [ ] Add bin entry for CLI executable
 
 ### 2. Core Structure ✗
 - [ ] Create src/ directory structure
@@ -95,6 +99,14 @@
 - [ ] CLI command documentation
 - [ ] MCP integration guide
 
+### 9. Developer Testing Setup ✗
+- [ ] Create test-example/ directory
+- [ ] Setup local test project that imports module
+- [ ] Add sample YAML API schemas
+- [ ] Create test scripts for local development
+- [ ] Add npm link setup for local testing
+- [ ] Example integration with Claude Desktop
+
 ## Priority Actions for MVP
 
 1. **Initialize Project** - Create package.json, TypeScript config
@@ -111,7 +123,16 @@
 - **File Watching**: Consider watching YAML directory for changes
 - **Validation**: Robust schema validation to prevent runtime errors
 - **Error Handling**: Clear error messages for both AI and human users
+- **NPM Module Structure**: Main export for programmatic use, bin for CLI
+- **Local Development**: npm link workflow for testing before publishing
+- **Module API**: Clean API for importing and using the MCP server in other projects
 
 ## Conclusion
 
 This is a greenfield project with zero implementation. The requirements are clear and focused on providing a bridge between API specifications (YAML/OpenAPI) and AI consumption via MCP. The MVP should focus on the core loop: read schemas → validate → serve via MCP, with a simple CLI for management.
+
+**Key NPM Module Requirements**:
+- Must be installable via `npm install api-tools-mcp`
+- CLI accessible via `npx api-tools-mcp` or global install
+- Programmatic API for integration into other projects
+- Local development workflow with test examples
