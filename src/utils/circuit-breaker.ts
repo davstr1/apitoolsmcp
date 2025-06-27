@@ -1,4 +1,5 @@
 import { logger } from './logger';
+import { updateCircuitBreakerState, trackCircuitBreakerFailure } from '../monitoring/metrics';
 
 export enum CircuitState {
   CLOSED = 'CLOSED',
@@ -21,8 +22,11 @@ export class CircuitBreaker {
   private lastFailureTime?: number;
   private totalRequests = 0;
   private resetTimer?: NodeJS.Timeout;
+  private host?: string;
 
-  constructor(private options: CircuitBreakerOptions) {}
+  constructor(private options: CircuitBreakerOptions, host?: string) {
+    this.host = host;
+  }
 
   async execute<T>(operation: () => Promise<T>): Promise<T> {
     if (this.state === CircuitState.OPEN) {
@@ -73,6 +77,10 @@ export class CircuitBreaker {
       state: this.state,
     });
 
+    if (this.host) {
+      trackCircuitBreakerFailure(this.host);
+    }
+
     if (this.state === CircuitState.HALF_OPEN) {
       this.open();
     } else if (this.shouldOpen()) {
@@ -114,6 +122,10 @@ export class CircuitBreaker {
       totalRequests: this.totalRequests,
     });
 
+    if (this.host) {
+      updateCircuitBreakerState(this.host, CircuitState.OPEN);
+    }
+
     // Set timer to attempt reset
     if (this.resetTimer) {
       clearTimeout(this.resetTimer);
@@ -123,6 +135,9 @@ export class CircuitBreaker {
       this.state = CircuitState.HALF_OPEN;
       this.successes = 0;
       logger.info('Circuit breaker attempting reset to HALF_OPEN');
+      if (this.host) {
+        updateCircuitBreakerState(this.host, CircuitState.HALF_OPEN);
+      }
     }, this.options.resetTimeout);
   }
 
@@ -139,6 +154,10 @@ export class CircuitBreaker {
     }
     
     logger.info('Circuit breaker is now CLOSED');
+    
+    if (this.host) {
+      updateCircuitBreakerState(this.host, CircuitState.CLOSED);
+    }
   }
 
   getState(): CircuitState {

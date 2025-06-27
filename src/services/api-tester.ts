@@ -13,6 +13,14 @@ import {
 import { Validator, ValidationSchema } from '../utils/validators';
 import { retry } from '../utils/retry';
 import { CircuitBreaker } from '../utils/circuit-breaker';
+import { 
+  trackHttpRequest, 
+  trackError, 
+  trackRetry, 
+  updateCircuitBreakerState,
+  trackCircuitBreakerFailure,
+  activeConnections 
+} from '../monitoring/metrics';
 
 export class ApiTester {
   private defaultTimeout = 30000; // 30 seconds
@@ -40,7 +48,7 @@ export class ApiTester {
         resetTimeout: 60000, // 1 minute
         volumeThreshold: 10,
         errorThresholdPercentage: 50,
-      }));
+      }, host));
     }
     
     return this.circuitBreakers.get(host)!;
@@ -105,6 +113,10 @@ export class ApiTester {
       const responseTime = Date.now() - startTime;
       response.responseTime = responseTime;
 
+      // Track metrics
+      const apiId = new URL(request.url).hostname;
+      trackHttpRequest(request.method, response.status, apiId, responseTime);
+
       return {
         request,
         response,
@@ -140,6 +152,11 @@ export class ApiTester {
         error: customError.message,
         responseTime,
       });
+
+      // Track error metrics
+      const apiId = new URL(request.url).hostname;
+      trackError(customError.constructor.name, apiId);
+      trackHttpRequest(request.method, 0, apiId, responseTime);
 
       return {
         request,
