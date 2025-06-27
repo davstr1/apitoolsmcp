@@ -265,6 +265,12 @@ npm link
 api-tools-mcp --help
 ```
 
+## Documentation
+
+- [Troubleshooting Guide](./TROUBLESHOOTING.md) - Common issues and solutions
+- [Security Best Practices](./SECURITY.md) - Security considerations for production
+- [Performance Optimization](./PERFORMANCE.md) - Tips for optimizing performance
+
 ## License
 
 MIT
