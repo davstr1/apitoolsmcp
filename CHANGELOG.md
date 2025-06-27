@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0] - 2024-12-27
+
+### Added
+- 🌐 **URL-based API testing** - Test live APIs and generate schemas from responses
+- 🔍 **OpenAPI auto-discovery** - Automatically find OpenAPI specs in your project
+- 📥 **Full OpenAPI import** - Import OpenAPI v2/v3 specs from URLs or local files
+- 🧪 **Interactive API tester** - Test endpoints with custom headers and parameters
+- 📊 **Response analyzer** - Analyze API responses and generate JSON schemas
+- 🎯 **Better header control** - Full control over HTTP headers with no unwanted defaults
+
+### Enhanced
+- `add` command now offers two modes: test live API or create manually
+- `list` command auto-discovers OpenAPI files when no schemas found
+- `import` command fully implemented with preview and confirmation
+- Added node-fetch for better HTTP control (instead of axios)
+- Improved error handling and user feedback
+
+### Technical
+- Added services layer for API testing, response analysis, and schema generation
+- Support for both raw HTTP mode and fetch mode
+- TypeScript types for HTTP operations
+- Better separation of concerns
+
 ## [0.1.0] - 2024-12-27
 
 ### Added

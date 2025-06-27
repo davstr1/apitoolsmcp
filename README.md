@@ -4,13 +4,15 @@ MCP (Model Context Protocol) server for serving API schemas to AI assistants. Th
 
 ## Features
 
+- 🌐 **Test live APIs** and generate schemas from responses
+- 🔍 **Auto-discover** OpenAPI specifications in your project
 - 📝 Define APIs using simple YAML format
 - 🤖 Expose API schemas to AI assistants via MCP
-- 🛠️ CLI for managing API schemas
+- 🛠️ Interactive CLI for managing API schemas
 - 📦 NPM package for easy integration
-- 🔍 Search and filter APIs
-- ✅ Schema validation
-- 🌐 OpenAPI import support (coming soon)
+- ✅ Schema validation with detailed error messages
+- 🌐 Import OpenAPI v2/v3 specifications (local or remote)
+- 🎯 Full control over HTTP headers (no unwanted defaults)
 
 ## Installation
 
@@ -54,7 +56,27 @@ npm install api-tools-mcp
 api-tools-mcp add
 ```
 
-Interactive prompts will guide you through creating a new API schema.
+Choose between:
+- **Test a live API endpoint** - Test a real API and generate schema from the response
+- **Create manually** - Define the API schema through interactive prompts
+
+#### Example: Test a Live API
+
+```bash
+$ api-tools-mcp add
+? How would you like to add an API? Test a live API endpoint
+? Enter the API endpoint URL: https://api.github.com/users/davstr1
+? API ID: github-user-api
+? API Name: GitHub User API
+? HTTP Method: GET
+? Select common headers: Authorization: Bearer YOUR_TOKEN_HERE
+? Execute test request? Yes
+
+✓ Request successful (200 OK)
+✓ Generated schema from response
+? Save this API schema? Yes
+✓ API schema saved successfully
+```
 
 ### List APIs
 
@@ -62,6 +84,8 @@ Interactive prompts will guide you through creating a new API schema.
 api-tools-mcp list
 api-tools-mcp list --search "user"
 ```
+
+If no schemas are found, the CLI will automatically scan for OpenAPI specifications in your project.
 
 ### Edit an API
 
@@ -76,11 +100,20 @@ api-tools-mcp validate
 api-tools-mcp validate path/to/schema.yaml
 ```
 
-### Import OpenAPI (coming soon)
+### Import OpenAPI
 
 ```bash
+# Import from URL
 api-tools-mcp import https://api.example.com/openapi.json
+
+# Import from local file
+api-tools-mcp import ./docs/openapi.yaml
+
+# Import with custom name
+api-tools-mcp import https://petstore.swagger.io/v2/swagger.json --name "Pet Store API"
 ```
+
+Supports OpenAPI v2 (Swagger) and v3 specifications in JSON or YAML format.
 
 ## Configuration
 

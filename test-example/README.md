@@ -2,6 +2,20 @@
 
 This directory contains test examples for the API Tools MCP module.
 
+## New Features Demo
+
+### URL-Based API Testing
+```bash
+node demo-url-add.js
+```
+Shows how the CLI can test a live API and generate schemas from responses.
+
+### OpenAPI Auto-Discovery
+```bash
+node demo-discovery.js
+```
+Demonstrates automatic discovery of OpenAPI specifications in your project.
+
 ## Setup
 
 1. First, build the main project:

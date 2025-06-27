@@ -13,7 +13,7 @@ const program = new Command();
 program
   .name('api-tools-mcp')
   .description('CLI tool for managing API schemas for MCP')
-  .version('0.1.0');
+  .version('0.2.0');
 
 program
   .command('add')
