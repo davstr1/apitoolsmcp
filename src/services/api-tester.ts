@@ -13,14 +13,7 @@ import {
 import { Validator, ValidationSchema } from '../utils/validators';
 import { retry } from '../utils/retry';
 import { CircuitBreaker } from '../utils/circuit-breaker';
-import { 
-  trackHttpRequest, 
-  trackError, 
-  trackRetry, 
-  updateCircuitBreakerState,
-  trackCircuitBreakerFailure,
-  activeConnections 
-} from '../monitoring/metrics';
+import { trackHttpRequest, trackError } from '../monitoring/metrics';
 
 export class ApiTester {
   private defaultTimeout = 30000; // 30 seconds
@@ -41,17 +34,27 @@ export class ApiTester {
 
   private getCircuitBreaker(url: string): CircuitBreaker {
     const host = new URL(url).host;
-    
+
     if (!this.circuitBreakers.has(host)) {
-      this.circuitBreakers.set(host, new CircuitBreaker({
-        failureThreshold: 5,
-        resetTimeout: 60000, // 1 minute
-        volumeThreshold: 10,
-        errorThresholdPercentage: 50,
-      }, host));
+      this.circuitBreakers.set(
+        host,
+        new CircuitBreaker(
+          {
+            failureThreshold: 5,
+            resetTimeout: 60000, // 1 minute
+            volumeThreshold: 10,
+            errorThresholdPercentage: 50,
+          },
+          host
+        )
+      );
     }
-    
-    return this.circuitBreakers.get(host)!;
+
+    const circuitBreaker = this.circuitBreakers.get(host);
+    if (!circuitBreaker) {
+      throw new Error(`Circuit breaker not found for host: ${host}`);
+    }
+    return circuitBreaker;
   }
 
   async executeRequest(request: HttpRequest, options: RawHttpOptions = {}): Promise<ApiTestResult> {
@@ -73,15 +76,17 @@ export class ApiTester {
             backoffMultiplier: 2,
             retryCondition: (error: Error) => {
               // Retry on network errors and 5xx status codes
-              if (error instanceof NetworkError || 
-                  error instanceof RequestTimeoutError ||
-                  error instanceof ConnectionRefusedError ||
-                  error instanceof DnsLookupError) {
+              if (
+                error instanceof NetworkError ||
+                error instanceof RequestTimeoutError ||
+                error instanceof ConnectionRefusedError ||
+                error instanceof DnsLookupError
+              ) {
                 return true;
               }
               const statusCode = (error as any).statusCode;
               return statusCode && statusCode >= 500 && statusCode < 600;
-            }
+            },
           });
         } else {
           return await retry(() => this.executeFetchRequest(request, options), {
@@ -90,15 +95,17 @@ export class ApiTester {
             backoffMultiplier: 2,
             retryCondition: (error: Error) => {
               // Retry on network errors and 5xx status codes
-              if (error instanceof NetworkError || 
-                  error instanceof RequestTimeoutError ||
-                  error instanceof ConnectionRefusedError ||
-                  error instanceof DnsLookupError) {
+              if (
+                error instanceof NetworkError ||
+                error instanceof RequestTimeoutError ||
+                error instanceof ConnectionRefusedError ||
+                error instanceof DnsLookupError
+              ) {
                 return true;
               }
               const statusCode = (error as any).statusCode;
               return statusCode && statusCode >= 500 && statusCode < 600;
-            }
+            },
           });
         }
       };

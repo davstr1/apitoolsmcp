@@ -1,5 +1,7 @@
 import * as fs from 'fs/promises';
-import { logger } from '../utils/logger';
+import { getConfig } from '../config/loader';
+import * as Express from 'express';
+// import { logger } from '../utils/logger';
 
 export interface HealthStatus {
   status: 'healthy' | 'unhealthy' | 'degraded';
@@ -63,7 +65,7 @@ export class HealthChecker {
     // Schema directory check
     this.registerCheck('schema_directory', async () => {
       try {
-        const config = require('../config/loader').getConfig();
+        const config = await getConfig();
         await fs.access(config.schemaDirectory);
         return { status: 'pass' };
       } catch (error) {
@@ -143,7 +145,8 @@ export class HealthChecker {
     // Simple liveness check - if the process can respond, it's alive
     try {
       // Check if we can allocate a small amount of memory
-      const test = Buffer.alloc(1024);
+      // const test = Buffer.alloc(1024);
+      Buffer.alloc(1024);
       
       // Check if we can perform basic arithmetic
       const result = 1 + 1;
@@ -200,22 +203,22 @@ export function getHealthChecker(): HealthChecker {
 }
 
 // Express middleware for health endpoints
-export function healthCheckMiddleware(app: any): void {
+export function healthCheckMiddleware(app: Express.Application): void {
   const checker = getHealthChecker();
 
-  app.get('/health', async (req: any, res: any) => {
+  app.get('/health', async (_req: Express.Request, res: Express.Response) => {
     const health = await checker.performHealthCheck();
     const statusCode = health.status === 'healthy' ? 200 : 
                       health.status === 'degraded' ? 200 : 503;
     res.status(statusCode).json(health);
   });
 
-  app.get('/health/live', async (req: any, res: any) => {
+  app.get('/health/live', async (_req: Express.Request, res: Express.Response) => {
     const liveness = await checker.performLivenessCheck();
     res.status(liveness.alive ? 200 : 503).json(liveness);
   });
 
-  app.get('/health/ready', async (req: any, res: any) => {
+  app.get('/health/ready', async (_req: Express.Request, res: Express.Response) => {
     const readiness = await checker.performReadinessCheck();
     res.status(readiness.ready ? 200 : 503).json(readiness);
   });

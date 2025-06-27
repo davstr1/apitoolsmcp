@@ -19,10 +19,10 @@ jest.mock('../../../src/services/schema-generator');
 jest.mock('../../../src/cli/utils/parameter-builder');
 
 describe('add-from-url command', () => {
-  const mockInquirer = inquirer as jest.Mocked<typeof inquirer>;
+  const mockInquirer = inquirer as any;
   const mockGetConfig = getConfig as jest.MockedFunction<typeof getConfig>;
   const mockBuildParameters = buildParameters as jest.MockedFunction<typeof buildParameters>;
-  
+
   let mockApiTester: jest.Mocked<ApiTester>;
   let mockResponseAnalyzer: jest.Mocked<ResponseAnalyzer>;
   let mockSchemaGenerator: jest.Mocked<SchemaGenerator>;
@@ -31,7 +31,7 @@ describe('add-from-url command', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     tempDir = createTempDir();
-    
+
     mockGetConfig.mockResolvedValue({
       schemaDirectory: tempDir,
       remoteImports: { enabled: true, cacheDuration: 3600000 },
@@ -46,13 +46,17 @@ describe('add-from-url command', () => {
     mockResponseAnalyzer = {
       analyze: jest.fn(),
     } as any;
-    (ResponseAnalyzer as jest.MockedClass<typeof ResponseAnalyzer>).mockImplementation(() => mockResponseAnalyzer);
+    (ResponseAnalyzer as jest.MockedClass<typeof ResponseAnalyzer>).mockImplementation(
+      () => mockResponseAnalyzer
+    );
 
     mockSchemaGenerator = {
       generate: jest.fn(),
       generateBasic: jest.fn(),
     } as any;
-    (SchemaGenerator as jest.MockedClass<typeof SchemaGenerator>).mockImplementation(() => mockSchemaGenerator);
+    (SchemaGenerator as jest.MockedClass<typeof SchemaGenerator>).mockImplementation(
+      () => mockSchemaGenerator
+    );
   });
 
   afterEach(() => {
@@ -91,11 +95,13 @@ describe('add-from-url command', () => {
       name: 'Example API',
       version: '1.0.0',
       baseURL: 'https://api.example.com',
-      endpoints: [{
-        path: '/users',
-        method: HTTPMethod.GET,
-        parameters: [{ name: 'page', type: 'number' as const, required: false }],
-      }],
+      endpoints: [
+        {
+          path: '/users',
+          method: HTTPMethod.GET,
+          parameters: [{ name: 'page', type: 'number' as const, required: false }],
+        },
+      ],
       metadata: {
         source: 'tested',
         createdAt: new Date().toISOString(),
@@ -103,7 +109,7 @@ describe('add-from-url command', () => {
     };
 
     // Mock user inputs
-    mockInquirer.prompt
+    (mockInquirer as any).prompt
       .mockResolvedValueOnce({ apiUrl: testUrl })
       .mockResolvedValueOnce({
         id: 'example-api',
@@ -140,7 +146,10 @@ describe('add-from-url command', () => {
     });
 
     const schemaPath = path.join(tempDir, 'example-api.yaml');
-    const exists = await fs.access(schemaPath).then(() => true).catch(() => false);
+    const exists = await fs
+      .access(schemaPath)
+      .then(() => true)
+      .catch(() => false);
     expect(exists).toBe(true);
   });
 
@@ -156,13 +165,15 @@ describe('add-from-url command', () => {
       name: 'Example API',
       version: '1.0.0',
       baseURL: 'https://api.example.com',
-      endpoints: [{
-        path: '/invalid',
-        method: HTTPMethod.GET,
-      }],
+      endpoints: [
+        {
+          path: '/invalid',
+          method: HTTPMethod.GET,
+        },
+      ],
     };
 
-    mockInquirer.prompt
+    (mockInquirer as any).prompt
       .mockResolvedValueOnce({ apiUrl: testUrl })
       .mockResolvedValueOnce({
         id: 'example-api',
@@ -186,12 +197,12 @@ describe('add-from-url command', () => {
   });
 
   it('should validate URL input', async () => {
-    mockInquirer.prompt.mockResolvedValueOnce({ apiUrl: 'invalid-url' });
+    (mockInquirer as any).prompt.mockResolvedValueOnce({ apiUrl: 'invalid-url' });
 
     // Test the URL validation function
-    const promptCall = mockInquirer.prompt.mock.calls[0];
+    const promptCall = (mockInquirer as any).prompt.mock.calls[0];
     const urlPrompt = (promptCall[0] as any[]).find((p: any) => p.name === 'apiUrl');
-    
+
     expect(urlPrompt.validate('invalid-url')).toBe('Please enter a valid URL');
     expect(urlPrompt.validate('https://api.example.com')).toBe(true);
   });
@@ -199,7 +210,7 @@ describe('add-from-url command', () => {
   it('should handle custom headers', async () => {
     const testUrl = 'https://api.example.com/users';
 
-    mockInquirer.prompt
+    (mockInquirer as any).prompt
       .mockResolvedValueOnce({ apiUrl: testUrl })
       .mockResolvedValueOnce({
         id: 'example-api',
@@ -222,7 +233,7 @@ describe('add-from-url command', () => {
 
     const generateCall = mockSchemaGenerator.generateBasic.mock.calls[0][0];
     expect(generateCall.headers).toEqual({
-      'Authorization': 'Bearer token123',
+      Authorization: 'Bearer token123',
       'X-Custom-Header': 'custom-value',
     });
   });
@@ -230,7 +241,7 @@ describe('add-from-url command', () => {
   it('should skip test if user declines', async () => {
     const testUrl = 'https://api.example.com/users';
 
-    mockInquirer.prompt
+    (mockInquirer as any).prompt
       .mockResolvedValueOnce({ apiUrl: testUrl })
       .mockResolvedValueOnce({
         id: 'example-api',
@@ -253,7 +264,7 @@ describe('add-from-url command', () => {
   });
 
   it('should handle user cancellation', async () => {
-    mockInquirer.prompt.mockRejectedValueOnce(new Error('User force closed the prompt'));
+    (mockInquirer as any).prompt.mockRejectedValueOnce(new Error('User force closed the prompt'));
 
     const mockExit = jest.spyOn(process, 'exit').mockImplementation(() => {
       throw new Error('process.exit called');
@@ -261,7 +272,7 @@ describe('add-from-url command', () => {
 
     await expect(addFromUrlCommand()).rejects.toThrow('process.exit called');
     expect(mockExit).toHaveBeenCalledWith(1);
-    
+
     mockExit.mockRestore();
   });
 });

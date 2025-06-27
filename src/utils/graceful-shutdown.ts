@@ -1,5 +1,6 @@
 import { logger } from './logger';
 import { stopMetricsServer } from '../monitoring/metrics-server';
+import * as Express from 'express';
 
 export interface ShutdownHandler {
   name: string;
@@ -141,7 +142,7 @@ export function getGracefulShutdown(): GracefulShutdown {
 }
 
 // Express middleware for request tracking
-export function requestTrackingMiddleware(req: any, res: any, next: any): void {
+export function requestTrackingMiddleware(_req: Express.Request, res: Express.Response, next: Express.NextFunction): void {
   const requestId = `${Date.now()}-${Math.random()}`;
   const shutdown = getGracefulShutdown();
   

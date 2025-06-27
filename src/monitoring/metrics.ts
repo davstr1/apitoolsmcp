@@ -119,15 +119,8 @@ export function trackError(type: string, api?: string): void {
   errorsTotal.inc({ type, api: api || 'unknown' });
 }
 
-export function trackSchemaValidation(
-  api: string,
-  valid: boolean,
-  duration: number
-): void {
-  schemaValidationDuration.observe(
-    { api, valid: String(valid) },
-    duration / 1000
-  );
+export function trackSchemaValidation(api: string, valid: boolean, duration: number): void {
+  schemaValidationDuration.observe({ api, valid: String(valid) }, duration / 1000);
 }
 
 export function trackRetry(api: string, success: boolean): void {
@@ -142,7 +135,10 @@ export function trackCacheAccess(cacheType: string, hit: boolean): void {
   }
 }
 
-export function updateCircuitBreakerState(host: string, state: 'CLOSED' | 'OPEN' | 'HALF_OPEN'): void {
+export function updateCircuitBreakerState(
+  host: string,
+  state: 'CLOSED' | 'OPEN' | 'HALF_OPEN'
+): void {
   const stateValue = state === 'CLOSED' ? 0 : state === 'OPEN' ? 1 : 2;
   circuitBreakerState.set({ host }, stateValue);
 }
@@ -152,7 +148,7 @@ export function trackCircuitBreakerFailure(host: string): void {
 }
 
 // Export function to get all metrics
-export function getMetrics(): string {
+export async function getMetrics(): Promise<string> {
   return metricsRegistry.metrics();
 }
 

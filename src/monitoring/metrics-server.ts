@@ -6,16 +6,17 @@ export class MetricsServer {
   private server?: http.Server;
   private port: number;
 
-  constructor(port: number = 9090) {
+  constructor(port = 9090) {
     this.port = port;
   }
 
   start(): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.server = http.createServer((req, res) => {
+      this.server = http.createServer(async (req, res) => {
         if (req.url === '/metrics' && req.method === 'GET') {
           res.writeHead(200, { 'Content-Type': 'text/plain; version=0.0.4' });
-          res.end(getMetrics());
+          const metrics = await getMetrics();
+          res.end(metrics);
         } else if (req.url === '/health' && req.method === 'GET') {
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ status: 'healthy' }));
@@ -30,7 +31,7 @@ export class MetricsServer {
         resolve();
       });
 
-      this.server.on('error', (error) => {
+      this.server.on('error', error => {
         logger.error('Metrics server error', error);
         reject(error);
       });
@@ -38,7 +39,7 @@ export class MetricsServer {
   }
 
   stop(): Promise<void> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       if (this.server) {
         this.server.close(() => {
           logger.info('Metrics server stopped');

@@ -12,9 +12,10 @@ export interface ResponseAnalysis {
 
 export class ResponseAnalyzer {
   async analyze(response: HttpResponse): Promise<ResponseAnalysis> {
-    const contentType = response.headers['content-type'] || '';
-    const dataType = this.detectDataType(contentType, response.body);
-    
+    const rawContentType = response.headers['content-type'] || 'unknown';
+    const contentType = rawContentType.split(';')[0].trim();
+    const dataType = this.detectDataType(rawContentType, response.body);
+
     const analysis: ResponseAnalysis = {
       contentType,
       dataType,
@@ -43,22 +44,27 @@ export class ResponseAnalyzer {
       } catch {
         // Keep as text
         analysis.exampleData = response.body.substring(0, 1000); // First 1000 chars
+        analysis.structure = { type: 'text' };
       }
     } else {
-      analysis.exampleData = typeof response.body === 'string' 
-        ? response.body.substring(0, 1000)
-        : 'Binary data';
+      analysis.exampleData =
+        typeof response.body === 'string' ? response.body.substring(0, 1000) : 'Binary data';
+      analysis.structure = { type: dataType };
     }
 
     return analysis;
   }
 
   private detectDataType(contentType: string, body: any): ResponseAnalysis['dataType'] {
-    if (contentType.includes('application/json')) return 'json';
-    if (contentType.includes('application/xml') || contentType.includes('text/xml')) return 'xml';
-    if (contentType.includes('text/html')) return 'html';
-    if (contentType.includes('text/')) return 'text';
-    
+    // Remove charset and other parameters from content type
+    const baseContentType = contentType.split(';')[0].trim().toLowerCase();
+
+    if (baseContentType.includes('application/json')) return 'json';
+    if (baseContentType.includes('application/xml') || baseContentType.includes('text/xml'))
+      return 'xml';
+    if (baseContentType.includes('text/html')) return 'html';
+    if (baseContentType.includes('text/')) return 'text';
+
     // Try to detect from body
     if (typeof body === 'object' && body !== null) return 'json';
     if (typeof body === 'string') {
@@ -66,7 +72,7 @@ export class ResponseAnalyzer {
       if (body.trim().startsWith('{') || body.trim().startsWith('[')) return 'json';
       return 'text';
     }
-    
+
     return 'binary';
   }
 
@@ -84,7 +90,7 @@ export class ResponseAnalyzer {
     return { structure, hasArray, hasObject, fields };
   }
 
-  private extractStructure(data: any, maxDepth: number = 3, currentDepth: number = 0): any {
+  private extractStructure(data: any, maxDepth = 3, currentDepth = 0): any {
     if (currentDepth >= maxDepth) return '...';
 
     if (data === null) return 'null';
@@ -112,18 +118,18 @@ export class ResponseAnalyzer {
     return false;
   }
 
-  private extractFields(data: any, prefix: string = ''): string[] {
+  private extractFields(data: any, prefix = ''): string[] {
     const fields: string[] = [];
 
     if (Array.isArray(data) && data.length > 0) {
-      return this.extractFields(data[0], prefix + '[]');
+      return this.extractFields(data[0], `${prefix}[]`);
     }
 
     if (typeof data === 'object' && data !== null) {
       for (const [key, value] of Object.entries(data)) {
         const fieldPath = prefix ? `${prefix}.${key}` : key;
         fields.push(fieldPath);
-        
+
         if (typeof value === 'object' && value !== null) {
           fields.push(...this.extractFields(value, fieldPath));
         }
