@@ -74,30 +74,30 @@
 ## Phase 4: Testing Improvements
 
 ### 4.1 Add End-to-End Tests
-- [ ] Create `tests/e2e` directory
-- [ ] Set up e2e test framework
-- [ ] Write test for full CLI flow
-- [ ] Write test for API request flow
-- [ ] Write test for error scenarios
-- [ ] Add e2e tests to CI pipeline
-- [ ] Commit e2e tests
+- [x] Create `tests/e2e` directory
+- [x] Set up e2e test framework
+- [x] Write test for full CLI flow
+- [x] Write test for API request flow
+- [x] Write test for error scenarios
+- [x] Add e2e tests to CI pipeline
+- [x] Commit e2e tests
 
 ### 4.2 Improve Edge Case Coverage
-- [ ] Add tests for network timeouts
-- [ ] Add tests for malformed responses
-- [ ] Add tests for rate limiting
-- [ ] Add tests for large payloads
-- [ ] Add tests for concurrent requests
-- [ ] Verify coverage increases
-- [ ] Commit new tests
+- [x] Add tests for network timeouts
+- [x] Add tests for malformed responses
+- [x] Add tests for rate limiting
+- [x] Add tests for large payloads
+- [x] Add tests for concurrent requests
+- [x] Verify coverage increases
+- [x] Commit new tests
 
 ### 4.3 Add Integration Tests
-- [ ] Create `tests/integration` directory
-- [ ] Mock external API responses
-- [ ] Test real HTTP client behavior
-- [ ] Test configuration loading
-- [ ] Test CLI command execution
-- [ ] Commit integration tests
+- [x] Create `tests/integration` directory
+- [x] Mock external API responses
+- [x] Test real HTTP client behavior
+- [x] Test configuration loading
+- [x] Test CLI command execution
+- [x] Commit integration tests
 
 ## Phase 5: Documentation
 
