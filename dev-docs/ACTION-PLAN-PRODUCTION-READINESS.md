@@ -23,22 +23,22 @@
 ## Phase 2: Dependency Updates
 
 ### 2.1 Update Major Version Dependencies
-- [ ] Backup current package-lock.json
-- [ ] Update chalk from 4.1.2 to 5.3.0
-- [ ] Test all chalk usages still work
-- [ ] Update inquirer from 8.2.6 to 10.x.x
-- [ ] Test all interactive prompts
-- [ ] Update node-fetch from 2.7.0 to 3.x.x
-- [ ] Test all HTTP requests
-- [ ] Run full test suite
-- [ ] Commit dependency updates
+- [x] Backup current package-lock.json
+- [x] Update chalk from 4.1.2 to 5.3.0 (reverted due to ESM incompatibility with Jest)
+- [x] Test all chalk usages still work
+- [x] Update inquirer from 8.2.6 to 10.x.x (reverted due to API changes)
+- [x] Test all interactive prompts
+- [x] Update node-fetch from 2.7.0 to 3.x.x (reverted due to timeout API change)
+- [x] Test all HTTP requests
+- [x] Run full test suite
+- [x] Commit dependency updates (keeping v4, v8, v2 for compatibility)
 
 ### 2.2 Update Minor Dependencies
-- [ ] Run `npm outdated` to list all outdated packages
-- [ ] Update all minor version dependencies
-- [ ] Run full test suite
-- [ ] Verify no breaking changes
-- [ ] Commit minor updates
+- [x] Run `npm outdated` to list all outdated packages
+- [x] Update all minor version dependencies
+- [x] Run full test suite
+- [x] Verify no breaking changes
+- [x] Commit minor updates
 
 ## Phase 3: Error Handling & Resilience
 
