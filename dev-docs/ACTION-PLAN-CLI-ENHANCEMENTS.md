@@ -5,10 +5,11 @@ Based on REVIEW-CLI-ENHANCEMENTS.md, here's the step-by-step implementation plan
 ## Phase 1: Add HTTP Client and Dependencies
 
 ### 1.1 Install Required Packages
-- [ ] Install axios: `npm install axios`
-- [ ] Install @types/axios: `npm install -D @types/axios`
+- [ ] Install node-fetch: `npm install node-fetch@2`
+- [ ] Install @types/node-fetch: `npm install -D @types/node-fetch`
 - [ ] Install openapi-types: `npm install openapi-types`
 - [ ] Install json-schema-generator: `npm install json-schema-generator`
+- [ ] Consider using native https module for ultimate control
 
 ### 1.2 Update TypeScript Types
 - [ ] Create src/types/http.ts
@@ -16,6 +17,7 @@ Based on REVIEW-CLI-ENHANCEMENTS.md, here's the step-by-step implementation plan
 - [ ] Define HttpRequest interface
 - [ ] Define HttpResponse interface
 - [ ] Define ApiTestResult interface
+- [ ] Add RawHttpOptions for low-level control
 
 ## Phase 2: Enhance Add Command with URL Support
 
@@ -65,20 +67,24 @@ Based on REVIEW-CLI-ENHANCEMENTS.md, here's the step-by-step implementation plan
 
 ### 3.1 Create API Tester
 - [ ] Create src/services/api-tester.ts
-- [ ] Implement executeRequest() method
+- [ ] Use node-fetch or native https module
+- [ ] Implement executeRequest() method with full control
+- [ ] Allow raw header specification (no defaults)
 - [ ] Handle different HTTP methods
-- [ ] Apply headers
+- [ ] Apply headers exactly as specified
 - [ ] Apply parameters
 - [ ] Set appropriate timeouts
+- [ ] Option to disable any automatic headers
 
 ### 3.2 Execute Test Request
 - [ ] Build full URL with parameters
-- [ ] Set all configured headers
-- [ ] Execute HTTP request
+- [ ] Set only user-specified headers (no defaults)
+- [ ] Execute HTTP request with raw control
 - [ ] Capture response status
-- [ ] Capture response headers
-- [ ] Capture response body
+- [ ] Capture all response headers
+- [ ] Capture raw response body
 - [ ] Measure response time
+- [ ] Log exact request sent for debugging
 
 ### 3.3 Error Handling
 - [ ] Handle network errors
