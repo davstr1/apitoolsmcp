@@ -3,7 +3,7 @@ import * as https from 'https';
 import * as http from 'http';
 import { URL } from 'url';
 import { HttpRequest, HttpResponse, ApiTestResult, RawHttpOptions } from '../types/http';
-import { logger, logApiRequest } from '../utils/logger';
+import { logger } from '../utils/logger';
 
 export class ApiTester {
   private defaultTimeout = 30000; // 30 seconds
