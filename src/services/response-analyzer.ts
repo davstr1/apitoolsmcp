@@ -24,12 +24,31 @@ export class ResponseAnalyzer {
     };
 
     if (dataType === 'json' && response.body) {
-      const jsonAnalysis = this.analyzeJson(response.body);
-      analysis.structure = jsonAnalysis.structure;
-      analysis.hasArray = jsonAnalysis.hasArray;
-      analysis.hasObject = jsonAnalysis.hasObject;
-      analysis.fields = jsonAnalysis.fields;
-      analysis.exampleData = response.body;
+      // If body is a string, try to parse it
+      if (typeof response.body === 'string') {
+        try {
+          const parsed = JSON.parse(response.body);
+          const jsonAnalysis = this.analyzeJson(parsed);
+          analysis.structure = jsonAnalysis.structure;
+          analysis.hasArray = jsonAnalysis.hasArray;
+          analysis.hasObject = jsonAnalysis.hasObject;
+          analysis.fields = jsonAnalysis.fields;
+          analysis.exampleData = parsed;
+        } catch {
+          // Invalid JSON, treat as text
+          analysis.dataType = 'text';
+          analysis.exampleData = response.body.substring(0, 1000);
+          analysis.structure = { type: 'text' };
+        }
+      } else {
+        // Already parsed JSON
+        const jsonAnalysis = this.analyzeJson(response.body);
+        analysis.structure = jsonAnalysis.structure;
+        analysis.hasArray = jsonAnalysis.hasArray;
+        analysis.hasObject = jsonAnalysis.hasObject;
+        analysis.fields = jsonAnalysis.fields;
+        analysis.exampleData = response.body;
+      }
     } else if (dataType === 'text' && typeof response.body === 'string') {
       // Try to parse as JSON in case content-type is wrong
       try {
@@ -64,8 +83,13 @@ export class ResponseAnalyzer {
       return 'xml';
     if (baseContentType.includes('text/html')) return 'html';
     if (baseContentType.includes('text/')) return 'text';
+    if (baseContentType.includes('image/') || baseContentType.includes('audio/') || 
+        baseContentType.includes('video/') || baseContentType.includes('application/octet-stream')) {
+      return 'binary';
+    }
 
     // Try to detect from body
+    if (Buffer.isBuffer(body)) return 'binary';
     if (typeof body === 'object' && body !== null) return 'json';
     if (typeof body === 'string') {
       if (body.trim().startsWith('<')) return body.includes('<!DOCTYPE html') ? 'html' : 'xml';
@@ -95,17 +119,20 @@ export class ResponseAnalyzer {
 
     if (data === null) return 'null';
     if (Array.isArray(data)) {
-      if (data.length === 0) return [];
-      return [this.extractStructure(data[0], maxDepth, currentDepth + 1)];
+      if (data.length === 0) return { type: 'array', items: {} };
+      return { 
+        type: 'array', 
+        items: this.extractStructure(data[0], maxDepth, currentDepth + 1) 
+      };
     }
     if (typeof data === 'object') {
-      const result: any = {};
+      const properties: any = {};
       for (const [key, value] of Object.entries(data)) {
-        result[key] = this.extractStructure(value, maxDepth, currentDepth + 1);
+        properties[key] = this.extractStructure(value, maxDepth, currentDepth + 1);
       }
-      return result;
+      return { type: 'object', properties };
     }
-    return typeof data;
+    return { type: typeof data };
   }
 
   private containsArray(data: any): boolean {

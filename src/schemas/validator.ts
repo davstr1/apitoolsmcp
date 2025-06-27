@@ -30,7 +30,7 @@ export class Validator {
       };
     }
 
-    return { valid: true };
+    return { valid: true, errors: [] };
   }
 
   validateOrThrow(schema: APISchema, schemaPath?: string): void {
